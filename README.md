@@ -1,6 +1,6 @@
 # Guide to Build Your own Programming Language Interpreter with C#
 
-Building a programming language is not as hard as it seems. It's just a lot splitting strings and keeping track of variables and tokens. I hope by the end of this article, you'll have an understanding on how it works. If you would like to view the [**GitHub Repository**](https:github.com), and contribute to the language, please do. 
+Building a programming language is not as hard as it seems. It's just a lot splitting strings and keeping track of variables and tokens. I hope by the end of this article, you'll have an understanding on how it works. If you would like to view the [**GitHub Repository**](https://github.com/JBrosDevelopment/CLang), and contribute to the language, please do. 
 
 - [Guide to Build Your own Programming Language Interpreter with C#](#guide-to-build-your-own-programming-language-interpreter-with-c)
 - [Planning](#planning)
@@ -143,7 +143,7 @@ internal static bool isAlpha(char c)
 }
 ```
 
-The Final Lexer code is a bit long to show, but here is the link to the file in the GitHub Repo, https://github.com. I'll explain it though. First it checks if the character is a whitespace, number, symbol, or letter. It will add the character to the correct variable depending on what type the character is. When it reaches the end of the token (ie, a space or operator for a number or quotation mark for a string), it will add it to the array.
+The Final Lexer code is a bit long to show, but here is the link to the file in the GitHub Repo, https://github.com/JBrosDevelopment/CLang.git. I'll explain it though. First it checks if the character is a whitespace, number, symbol, or letter. It will add the character to the correct variable depending on what type the character is. When it reaches the end of the token (ie, a space or operator for a number or quotation mark for a string), it will add it to the array.
 
 I've added some code to convert it to JSON format, 
 ```csharp
@@ -441,7 +441,7 @@ public static object? GetValueFromTokens(Token[] tokens, Variable[] variables)
 }
 ```
 
-The method was too long to fit in this. If you want to check how it's done, go to the [GitHub Repo](https://github.com). With this, I also had to modify the [Function](#functions) code in the Execute method.
+The method was too long to fit in this. If you want to check how it's done, go to the [GitHub Repo](https://github.com/JBrosDevelopment/CLang). With this, I also had to modify the [Function](#functions) code in the Execute method.
 
 ```cs
 Token[][] parameterTokens = new Token[func.Params][];
@@ -652,4 +652,4 @@ I hope this showed how easy it is to make a programming language. I did this wit
 ```cs
 var x = some_function "parameter"
 ```
-I'm going to stop here, but if any of you want to take this any further, head onto the GitHub Repo and make a pull request. It's so easy to add to this language. Thanks for reading this and if you want an overview of this process without any code, you can read my article, https://a
+I'm going to stop here, but if any of you want to take this any further, head onto the [GitHub Repo](https://github.com/JBrosDevelopment/CLang) and make a pull request. It's so easy to add to this language. Thanks for reading this and if you want an overview of this process without any code, you can read my article, https://jbrosdev.hashnode.dev/every-programmer-should-build-their-own-programming-language
