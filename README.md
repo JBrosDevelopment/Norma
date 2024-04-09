@@ -1,35 +1,47 @@
-# Guide to Build Your own Programming Language Interpreter with C#
+# Guide to Building Your own Programming Language with C#
+Building a programming language is not as hard as it seems. It is mainly splitting strings and keeping track of variables and tokens. I hope by the end of this article, you'll have an understanding of how it works. If you would like to view the [**GitHub Repository**](https://github.com/JBrosDevelopment/CLang), and contribute to the language, please do.
 
-Building a programming language is not as hard as it seems. It's just a lot splitting strings and keeping track of variables and tokens. I hope by the end of this article, you'll have an understanding on how it works. If you would like to view the [**GitHub Repository**](https://github.com/JBrosDevelopment/CLang), and contribute to the language, please do. 
+* [Planning](#planning)
+    
+* [Interpreter](#interpreter)
+    
+    * [Lexer](#lexer)
+        
+    * [Parser](#parser)
+        
+    * [Executor](#executor)
+        
+        * [Functions](#functions)
+            
+        * [Variables](#variables)
+            
+        * [Operations](#operations)
+            
+* [Testing](#testing)
+    
+* [Adding Functions](#adding-functions)
+    
+* [Recap](#recap)
+    
 
-- [Guide to Build Your own Programming Language Interpreter with C#](#guide-to-build-your-own-programming-language-interpreter-with-c)
-- [Planning](#planning)
-- [Interpreter](#interpreter)
-  - [Lexer](#lexer)
-  - [Parser](#parser)
-  - [Executor](#executor)
-    - [Functions](#functions)
-    - [Variables](#variables)
-    - [Operations](#operations)
-- [Testing](#testing)
-- [Adding Functions](#adding-functions)
-- [Recap](#recap)
+I've really loved building my own programming language, [EZCode](https://github.com/EZCodeLanguage/EZCode). It has been getting complicated lately so I've decided to take a break and work on something else. I thought I might try to make a very small and non-complicated language. I don't feel like coming up with a name, so we're going to go with **CustomLang** or **CLang** for short. It will be extremely simple and have only a few features:
 
+* Variable Declaration
+    
+* Operations
+    
+* Printing to the Console
+    
 
-I've been really loving building my own programming language, [EZCode](https://github.com/EZCodeLanguage/EZCode). It has been getting complicated lately so I wanted to take a break and desscribe the process of making a programming language. I don't feel like coming up with a name, so the language we are going to make is going to be called **CustomLang** or **CLang** for short. It will be extremely simple and have only a few features,
-- Variable Declaration
-- Operations
-- Printing to the Console
+I will be making it in C# because this is the language I feel most comfortable with. It'll be an interpreted language and not a compiler, just to make things simpler.
 
-I will be making it in C# because this is the language I feel most comfortable with. I will make an interpreter for this language and not a compiler just to make it simple.
-
-![Set Up](images/SetUp.png)
+![Set Up](https://raw.githubusercontent.com/JBrosDevelopment/CLang/main/images/SetUp.png align="left")
 
 # Planning
 
-Let's plan out what we want CLang to look like syntacticly. I'm going to go with something like Python. This is what I want it to look like,
+Let's plan out what we want CLang to look like syntactically. I'm going to go with something like Python. This is what I want it to look like,
 
-```cs
+```javascript
 var x = 10
 var y = 20
 var z = ($x$ * $y$)
@@ -39,20 +51,24 @@ print "Equation: $x$ * $y$ = $z$"
 // Equation: 10 * 20 = 200
 ```
 
-We'll use `$` syntax to show there is a variable. The only function we'll have is `print`. We won't use parenthesis for the function either. 
+It'll use `$` syntax to show there is a variable. The only function it'll have is `print`. It won't use parenthesis for the function either.
 
-Now That we have plan for out language, we'll start making the interpreter!
+Now that I have plans for our language, I'll start making the interpreter!
 
 # Interpreter
 
-There are 3 main steps of an interpreter, 
-- [Lexer](#lexer): The lexer converts the code into tokens that can be more easily read by the prgram.
-- [Parser](#parser): The parser takes the tokens from the lexer and makes an Abstract Syntax Tree, or an AST. This will give a heirarchy to the code to tell the interpreter what needs to be computed first.
-- [Executor](#executor): This will execute the program line by line 
+There are 3 main steps of an interpreter:
+
+* [Lexer](#lexer): The lexer converts the code into tokens that can be more easily read by the program.
+    
+* [Parser](#parser): The parser takes the tokens from the lexer and makes an Abstract Syntax Tree, or an AST. This will give a hierarchy to the code to tell the interpreter what needs to be computed first.
+    
+* [Executor](#executor): This will execute the program line by line.
+    
 
 ## Lexer
 
-The first step of the parser is to split the code into many lines. We'll start by creating a few classes, 
+The first step of the lexer is to split the code into many lines. We'll start by creating a few classes.
 
 ```csharp
 // Lexer.cs
@@ -85,7 +101,8 @@ namespace CustomLang
 }
 ```
 
-Now that we have defined a token and a line, we can create a `Tokenizer` method. It will take the code `string` as an input and output `Line[]`. 
+Now that we have defined a token and a line, we can create a `Tokenizer` method. It will take the code `string` as an input and output as a list of lines.
+
 ```csharp
 // lexer.cs
 public class Lexer 
@@ -96,11 +113,17 @@ public class Lexer
     }
 }
 ```
+
 We'll Split `code` into a `line[]` by each new line character `\n` and trim the whitespaces for each line.
+
 ```csharp
 string[] lines = code.Split('\n').Select(x => x.Trim() ).ToArray();
 ```
-Next We'll loop through each line. We'll go through each character in the line and determine how it should be added to a token.
+
+Next, we'll loop through each line.
+
+The code will go through each character in the line and determine how it should be added to a token.
+
 ```csharp
 string[] lines = code.Split('\n').Select(x => x.Trim() ).ToArray();
 LexerLine[] lexerLines = [];
@@ -121,9 +144,11 @@ for (int i = 0; i < lines.Length; i++)
 
 return lexerLines;
 ```
-We got the structure down. Now, we got to implement the Tokenization part.
 
-Lets add some functions to check what the current character is.
+Now that we have the structure down, we can implement the Tokenization part.
+
+Let's add some functions to check what the current character is.
+
 ```csharp
 internal static bool isWhiteSpace(char c)
 {
@@ -143,9 +168,10 @@ internal static bool isAlpha(char c)
 }
 ```
 
-The Final Lexer code is a bit long to show, but here is the link to the file in the GitHub Repo, https://github.com/JBrosDevelopment/CLang.git. I'll explain it though. First it checks if the character is a whitespace, number, symbol, or letter. It will add the character to the correct variable depending on what type the character is. When it reaches the end of the token (ie, a space or operator for a number or quotation mark for a string), it will add it to the array.
+The Final Lexer code is a bit long to show, but here is the link to the file in the GitHub Repo, https://github.com/JBrosDevelopment/CLang/blob/main/Lexer.cs. I'll try to explain it. First it checks if the character is a whitespace, number, symbol, or letter. It will add the character to the correct variable depending on what type the character is. When it reaches the end of the token (ie, spaces or operators for a numbers and quotation marks for a strings), it will add it to the array.
 
-I've added some code to convert it to JSON format, 
+I've added some code to convert it to JSON format,
+
 ```csharp
 Lexer.Line[] lines = Lexer.Tokenizer("""
     var x = 10
@@ -155,7 +181,9 @@ Lexer.Line[] lines = Lexer.Tokenizer("""
     """);
 Console.WriteLine(JsonConvert.SerializeObject(lines, Formatting.Indented));
 ```
+
 I'll just show the output for the `var x = 10`,
+
 ```json
 [
   {
@@ -184,22 +212,23 @@ I'll just show the output for the `var x = 10`,
 
 ## Parser
 
-The Parser is the next step of the interpreter. This creates an abstract syntax tree adding heirarchy to the code. There are multiple ways to do this. I will not implement this in our language because of how simple CLang is. If you want to implement this, here is what it might look like. For the example `var z = ($x$ * $y$)`, the tree might be look like this,
-```
-// z = (x * y)
+The Parser is the next step of the interpreter. This creates an abstract syntax tree adding hierarchy to the code. There are multiple ways to do this. I will not implement this in our language because of how simple *CLang* is. If you want to implement this, here is what it might look like.
 
-// AST Tree:
-//
-//        z
-//       / \
-//      z   *
-//         / \
-//        x   y
+```basic
+ z = (x * y)
+```
+
+```basic
+        z
+       / \
+      z   *
+         / \
+        x   y
 ```
 
 ## Executor
 
-The last part of the interpreter is the execution part. It will go line by line and read/execute the tokens in it. Here is a simple skeleton of the code without any implementation added.
+The last part of the interpreter is the execution part. It will go line by line and read/execute the tokens in it. Here is a simple format of the code without any implementation added.
 
 ```csharp
 // Execution.cs
@@ -243,12 +272,11 @@ namespace CustomLang
         }
     }
 }
-
 ```
 
 ### Functions
 
-We'll start with the print function. I'll create a Function class and a print class that inherits from it.
+We'll start with the print function. I'll create a Function class and a Print class that inherits from it.
 
 ```csharp
 // Functions.cs
@@ -279,7 +307,8 @@ namespace CustomLang
 
 Doing this will easily allow more functions to be added to the language.
 
-We will need to add this static array to the beginning of the `Execution.cs` file to keep track of all of the built-in functions that we can make,
+We will need to add this static array to the beginning of the `Execution.cs` file to keep track of all of the built-in functions that we can make.
+
 ```csharp
 public static Function[] Functions = 
 [
@@ -287,7 +316,8 @@ public static Function[] Functions =
 ];
 ```
 
-Now, to implement this in the Executor, we'll need to check to see if the first token is an identifier, and if it's value is the same as the function's name. If it is, we'll need to extract the parameters from the rest of the line. Last but not least, execute the function. Here is how it will look in code,
+Now, to implement this in the Executor, we'll need to check to see if the first token is an identifier, and if its value is the same as the function's name. If it is, we'll need to extract the parameters from the rest of the line. And last but not least, execute the function. Here is how it will look in code:
+
 ```cs
 // inside the token switch in Execution.cs
 
@@ -313,7 +343,7 @@ break;
 
 The way we have implemented this allows multiple functions to be added very easily.
 
-To make sure it works, we'll run this code
+To make sure it works, we'll run this code:
 
 ```cs
 // Program.cs
@@ -336,15 +366,15 @@ namespace CustomLang
 }
 ```
 
-It successfully outputs,
+It successfully outputs:
 
-```
+```basic
 Equation: x * y = z
 ```
 
 ### Variables
 
-This is the most important part of our language. We'll first define a variable with it's own class.
+This is the most important part of our language. We'll first define a variable with its own class.
 
 ```cs
 // Variable.cs
@@ -364,7 +394,9 @@ namespace CustomLang
 }
 ```
 
-Now we need to implement this in the `Execution.cs`. First, we need to check if the syntax is correct. If it is, we get the value and name from tokens. Lastly, the program needs to add the variable to a list of all variables. Let's implement this.
+Now we need to implement this in the `Execution.cs`.
+
+The first thing we'll do is check if the syntax in the line is correct. If it is, we get the value and name from tokens. Lastly, the program needs to add the variable to a list of all variables. Let's implement this.
 
 ```cs
 // inside the token switch in Execution.cs
@@ -399,7 +431,7 @@ And we need to add the Variable List to the beginning of the Execute Function.
 ```cs
     public static int Execute(Line[] lines)
     {
-        Variable[] Variables = [];
+        Variable[] variables = [];
 
         // Rest of code...
     }
@@ -471,14 +503,15 @@ func.Execute(parameters);
 
 I had to include the `GetValueFromTokens` method so it could extract variables.
 
-The [example code](#planning) we created when we planned it now works! It outputs,
-```
+The [example code](#planning) we created when we planned it now works! It outputs:
+
+```basic
 Equation: 10 * 20 = 200
 ```
 
 ### Operations
 
-The last thing we need to add to our interpreter are operations the variables can make. Because of the way we set up out lexer, we'll just use `+` instead of `+=` to add to variables. We could go back and adjust the lexer to view `+=` as a single symbol, but honestly just doing `x + 5` will add some uniqueness to *CLang*. We'll start off by adding an `else` statement to the Identifier case in the `Execute` method.
+The last thing we need to add to our interpreter are operations the variables can make. Because of the way we set up our lexer, we'll just use `+` instead of `+=` to add to the variables. We could go back and adjust the lexer to view `+=` as a single symbol, but honestly just doing `x + 5` will add some uniqueness to *CLang*. We'll start off by adding an `else` statement to the `case TokenType.Identifier` in the `Execute` method.
 
 ```cs
 case TokenType.Identifier:
@@ -500,7 +533,8 @@ case TokenType.Identifier:
 break;
 ```
 
-Great! Last thing to just make it work. What thing we'll do is make sure the syntax is correct.
+Great! The last thing is to just make it work. First, we need to make sure the syntax is correct.
+
 ```cs
 if (line.Tokens.Length < 3)
     throw new Exception("Variable operation syntax is incorrect. Correct syntax is, 'NAME = VALUE' where '=' can be any operator");
@@ -514,7 +548,7 @@ Next, we'll get the value on the side of the operator. That's very simple with t
 object value = GetValueFromTokens(line.Tokens.Skip(2).ToArray(), variables);
 ```
 
-Amazing. we're so close. We jsut got to check if the what operator and do the corresponding operation with it. We also got to make check if the types, `string` and `float`, don't match. For example, we can't add `"Hello"` to the number `10`. Now, let's code it!
+We're so close. Now we just need to check what the operator is, and do the corresponding operation with it. We also need to check if the types, `string` and `float`, don't match. For example, we can't add `"Hello"` to the number `10`. Now, let's code it!
 
 ```cs
 switch(line.Tokens[1].Value)
@@ -554,7 +588,8 @@ switch(line.Tokens[1].Value)
 
 # Testing
 
-Before we say it's done, we got to test it. I have this codem and we can start testing!
+Before we say it's done, we need to test it. With this code we can start testing!
+
 ```cs
 namespace CustomLang 
 {
@@ -566,7 +601,7 @@ namespace CustomLang
                 var x = 10
                 var y = 20
 
-                x + "150"
+                x + 150
 
                 var z = ($x$ * $y$)
 
@@ -578,12 +613,13 @@ namespace CustomLang
 }
 ```
 
-The output is an error.
-```
-Can not add type string to number. In line '4'
+The output is correct!
+
+```basic
+Equation: 160 + 20 = 180
 ```
 
-This is correct! Let's try out some other scenarios.
+Let's try out some other scenarios.
 
 ```cs
 var Number = (528 - 5)
@@ -595,18 +631,19 @@ Text + "!"
 print "Text: $Text$, Number: $Number$"
 ```
 
-And it successfully outputs
-```
+And it successfully outputs:
+
+```basic
 Text: CLang is awesome!, Number: 482206
 ```
 
 After doing a quick check, it did the math right!
 
-![Calculator](Images/Calculator.png)
+![Calculator](https://raw.githubusercontent.com/JBrosDevelopment/CLang/main/images/Calculator.png align="left")
 
 # Adding Functions
 
-The way we set up the Functions class, we can easily add more functions. If we want to go even further, we can set it up to make set a variable to whatever the function returns. Just for proof of concept, let's add one more function.
+The way we set up the Functions class, we can easily add more functions. Just for proof of concept, let's add one more function.
 
 ```cs
 // Function.cs
@@ -639,17 +676,20 @@ public static Function[] Functions = [
     ];
 ```
 
-This works Great! I ran the code,
-```cs
+This works great! I ran the code:
+
+```javascript
 parserAdd "25", 150
 ```
 
-And it correctly outputted `175`. 
+And it correctly output `175`.
 
 # Recap
 
-I hope this showed how easy it is to make a programming language. I did this with only around *~450* lines of code. There is so much that can be added to this language. The next step would be to do something like this, 
+I hope this shows how easy it is to make a programming language. I did this with only around *450* lines of code. There is so much that can be added to this language. The next step would most likely be to do something like this:
+
 ```cs
 var x = some_function "parameter"
 ```
-I'm going to stop here, but if any of you want to take this any further, head onto the [GitHub Repo](https://github.com/JBrosDevelopment/CLang) and make a pull request. It's so easy to add to this language. Thanks for reading this and if you want an overview of this process without any code, you can read my article, https://jbrosdev.hashnode.dev/every-programmer-should-build-their-own-programming-language
+
+I'm going to stop here, but if any of you want to take this any further, head onto the [GitHub Repo](https://github.com/JBrosDevelopment/CLang) and make a pull request. It's so easy to add to this language. Thanks for reading this and if you want an overview of this process without any code, you can read my [other article](https://jbrosdev.hashnode.dev/every-programmer-should-build-their-own-programming-language) about this.
