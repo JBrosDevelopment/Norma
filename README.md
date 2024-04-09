@@ -1,3 +1,7 @@
+## \*\***Find Article on HashNode [Here](https://jbrosdev.hashnode.dev/guide-to-building-your-own-programming-language-with-c)**\*\*
+
+
+
 # Guide to Building Your own Programming Language with C#
 Building a programming language is not as hard as it seems. It is mainly splitting strings and keeping track of variables and tokens. I hope by the end of this article, you'll have an understanding of how it works. If you would like to view the [**GitHub Repository**](https://github.com/JBrosDevelopment/CLang), and contribute to the language, please do.
 
