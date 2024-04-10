@@ -4,8 +4,13 @@ namespace CustomLang
 {
     public class Parser
     {
+        /*
+         * The parser will find any if/else/while statements.
+         */
         public static Line[] Parse(Line[] lines)
         {
+            return lines;
+
             Line[] parserLines = [];
 
             for (int i = 0; i < lines.Length; i++)
@@ -25,12 +30,3 @@ namespace CustomLang
         }
     }
 }
-// z = (x * y)
-//
-// AST Tree:
-//
-//        z
-//       / \
-//      z   *
-//         / \
-//        x   y

@@ -4,11 +4,22 @@
     {
         public static void Main(string[] args) 
         {
-            Lexer.Line[] lines = Lexer.Tokenizer("""
+            System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+
+            var lexerLines = Lexer.Tokenizer("""
+                // CLang Testing
+
                 var result = parse "25"
                 print $result$
+                
+
                 """);
-            Execution.Execute(lines);
+            var parserLines = Parser.Parse(lexerLines);
+
+            Execution.Execute(parserLines);
+
+            // To time how fast CLang is
+            Console.WriteLine("------------------\nMiliseconds: " + sw.ElapsedMilliseconds.ToString());
         }
     }
 }

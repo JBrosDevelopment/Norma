@@ -4,12 +4,12 @@ namespace CustomLang
 {
     public class Execution
     {
-        public static Function[] Functions = [
-            new Print(),
-            new Parse()
-            ];
+        /* 
+         * This will take a Line[] and execute the code line by line
+         */
         public static int Execute(Line[] lines)
         {
+            Function[] functions = Function.InstantiateFunctions();
             Variable[] variables = [];
 
             int number_line = 0,
@@ -27,9 +27,9 @@ namespace CustomLang
                     switch (token.Type)
                     {
                         case TokenType.Identifier:
-                            if (Functions.FirstOrDefault(x => x.Name == token.Value) is Function func)
+                            if (functions.FirstOrDefault(x => x.Name == token.Value) is Function func)
                             {
-                                ExecuteFunction(func, line.Tokens, variables);
+                                ExecuteFunction(func, line.Tokens, variables, functions);
                             }
                             else
                             {
@@ -40,7 +40,7 @@ namespace CustomLang
                                     if (line.Tokens[1].Type != TokenType.Symbol)
                                         throw new Exception("Variable operation syntax is incorrect. Correct syntax is, 'NAME = VALUE' where '=' can be any operator");
 
-                                    object value = GetValueFromTokens(line.Tokens.Skip(2).ToArray(), variables);
+                                    object value = GetValueFromTokens(line.Tokens.Skip(2).ToArray(), variables, functions);
 
                                     switch(line.Tokens[1].Value)
                                     {
@@ -94,7 +94,7 @@ namespace CustomLang
                                     throw new Exception("Variable declaration is incorrect. Correct syntax is, 'var NAME = VALUE'");
                                 }
                                 string name = line.Tokens[1].Value;
-                                object? value = GetValueFromTokens(line.Tokens.Skip(3).ToArray(), variables);
+                                object? value = GetValueFromTokens(line.Tokens.Skip(3).ToArray(), variables, functions);
 
                                 Variable var = new Variable(name, value);
 
@@ -120,7 +120,7 @@ namespace CustomLang
             }
             return error_code;
         }
-        internal static object? ExecuteFunction(Function func, Token[] tokens, Variable[] variables)
+        internal static object? ExecuteFunction(Function func, Token[] tokens, Variable[] variables, Function[] functions)
         {
             Token[][] parameterTokens = new Token[func.Params][];
             int paramsCount = 0;
@@ -141,13 +141,13 @@ namespace CustomLang
             object[] parameters = new object[func.Params];
             for (int i = 0; i < parameterTokens.Length; i++)
             {
-                parameters[i] = GetValueFromTokens(parameterTokens[i], variables);
+                parameters[i] = GetValueFromTokens(parameterTokens[i], variables, functions);
                 if (parameters[i] == null)
                     throw new Exception($"Could not extract value from function parameter '{i + 1}'");
             }
             return func.Execute(parameters);
         }
-        internal static object? GetValueFromTokens(Token[] tokens, Variable[] variables)
+        internal static object? GetValueFromTokens(Token[] tokens, Variable[] variables, Function[] functions)
         {
             object? value = null; 
 
@@ -249,11 +249,11 @@ namespace CustomLang
             }
             else if (tokens[0].Type == TokenType.Identifier)
             {
-                if (Functions.FirstOrDefault(x => x.Name == tokens[0].Value) is Function func)
+                if (functions.FirstOrDefault(x => x.Name == tokens[0].Value) is Function func)
                 {
                     if (func.Returns)
                     {
-                        value = ExecuteFunction(func, tokens, variables);
+                        value = ExecuteFunction(func, tokens, variables, functions);
                     }
                     else
                     {

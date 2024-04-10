@@ -28,6 +28,10 @@ namespace CustomLang
                 Tokens = tokens;
             }
         }
+        internal static string[] ReservedKeywrods = ["var", "if", "else", "while"];
+        /*
+         * This is the Lexer part of the interpreter. It takes a string and outputs lines of code that contain tokens
+         */
         public static Line[] Tokenizer(string code) 
         {
             string[] lines = code.Split('\n').Select(x => x.Trim() ).ToArray();
@@ -128,7 +132,7 @@ namespace CustomLang
                     }
                     if (!isIdentifier && identifier != "")
                     {
-                        TokenType tokenType = identifier == "var" ?
+                        TokenType tokenType = ReservedKeywrods.Contains(identifier) ?
                             TokenType.Reserved :
                             TokenType.Identifier; 
 
@@ -146,7 +150,7 @@ namespace CustomLang
                 else if (isQuotation) tokens = [.. tokens, new Token(quote, TokenType.String)];
                 else if (isIdentifier)
                 {
-                    TokenType tokenType = identifier == "var" ?
+                    TokenType tokenType = ReservedKeywrods.Contains(identifier) ?
                         TokenType.Reserved :
                         TokenType.Identifier;
                     tokens = [.. tokens, new Token(identifier, tokenType)];
