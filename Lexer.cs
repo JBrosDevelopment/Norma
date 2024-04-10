@@ -2,6 +2,16 @@ namespace CustomLang
 {
     public class Lexer
     {
+        public struct CharRange
+        {
+            public int Start { get; set; }
+            public int End { get; set; }
+            public CharRange(int start, int end)
+            {
+                Start = start;
+                End = end;
+            }
+        }
         public enum TokenType
         {
             Identifier, Reserved, Symbol, Variable, Number, String
@@ -10,12 +20,12 @@ namespace CustomLang
         {
             public string Value { get; set; }
             public TokenType Type { get; set; }
-            public Token[] Children { get; set; }
-            public Token(string value, TokenType type, Token[]? child = null)
+            public CharRange Range { get; set; }
+            public Token(string value, TokenType type, CharRange range)
             {
                 Value = value;
                 Type = type;
-                Children = child ?? [];
+                Range = range;
             }
         }
         public class Line
@@ -57,6 +67,7 @@ namespace CustomLang
                     variable = null,
                     identifier = null,
                     symbol = "";
+                int? start = 0;
                 
                 for (int j = 0; j < chars.Length; j++)
                 {
@@ -73,6 +84,7 @@ namespace CustomLang
                     }
                     else if (isNum(c))
                     {
+                        start = j;
                         isNumber = true;
                         number += c;
                     }
@@ -81,6 +93,7 @@ namespace CustomLang
                         if (c == '"')
                         {
                             isQuotation = !isQuotation;
+                            start ??= j;
                             quote ??= "";
                         }
                         else if (c == '$')
@@ -88,11 +101,13 @@ namespace CustomLang
                             tempWasQuote = isQuotation || (isVariable && tempWasQuote);
                             isVariable = !isVariable;
                             isQuotation = !isQuotation && tempWasQuote;
+                            start ??= j;
                         }
                         else if(!isQuotation)
                         {
                             symbol = c.ToString();
-                            
+                            start = j;
+
                             if (c == '>' && chars.Length > j + 1 && chars[j + 1] == '=')
                             {
                                 j++;
@@ -128,6 +143,7 @@ namespace CustomLang
                     }
                     else if (isAlpha(c))
                     {
+                        start ??= j;
                         identifier += c;
                         isIdentifier = true;
                     }
@@ -135,21 +151,24 @@ namespace CustomLang
                     {
                         throw new Exception("Character '" + c + "' is not valid in line " + (i + 1));
                     }
-
+                    CharRange range = new CharRange(start ?? 0, j - 1);
                     if (!isNumber && number != null)
                     {
-                        tokens = [.. tokens, new Token(number, TokenType.Number)];
+                        tokens = [.. tokens, new Token(number, TokenType.Number, range)];
                         number = null;
+                        start = null;
                     }
                     if (!isVariable && variable != null)
                     {
-                        tokens = [.. tokens, new Token(variable, TokenType.Variable)];
+                        tokens = [.. tokens, new Token(variable, TokenType.Variable, range)];
                         variable = null;
+                        start = null;
                     }
                     if (!isQuotation && quote != null)
                     {
-                        tokens = [.. tokens, new Token(quote, TokenType.String)];
+                        tokens = [.. tokens, new Token(quote, TokenType.String, range)];
                         quote = null;
+                        start = null;
                     }
                     if (!isIdentifier && identifier != null)
                     {
@@ -157,25 +176,27 @@ namespace CustomLang
                             TokenType.Reserved :
                             TokenType.Identifier; 
 
-                        tokens = [.. tokens, new Token(identifier, tokenType)];
+                        tokens = [.. tokens, new Token(identifier, tokenType, range)];
                         identifier = null;
+                        start = null;
                     }
                     if (isSymbolChar)
                     {
-                        tokens = [.. tokens, new Token(symbol, TokenType.Symbol)];
+                        tokens = [.. tokens, new Token(symbol, TokenType.Symbol, range)];
                         isSymbolChar = false;
                         symbol = "";
+                        start = null;
                     }
                 }
-                if (isNumber) tokens = [.. tokens, new Token(number, TokenType.Number)];
-                else if (isVariable) tokens = [.. tokens, new Token(variable, TokenType.Variable)];
-                else if (isQuotation) tokens = [.. tokens, new Token(quote, TokenType.String)];
+                if (isNumber) tokens = [.. tokens, new Token(number, TokenType.Number, new CharRange(start ?? throw new Exception("Error getting token start in line " + chars.Length), lines.Length - 1))];
+                else if (isVariable) tokens = [.. tokens, new Token(variable, TokenType.Variable, new CharRange(start ?? throw new Exception("Error getting token start in line " + chars.Length), lines.Length - 1))];
+                else if (isQuotation) tokens = [.. tokens, new Token(quote, TokenType.String, new CharRange(start ?? throw new Exception("Error getting token start in line " + chars.Length), lines.Length - 1))];
                 else if (isIdentifier)
                 {
                     TokenType tokenType = ReservedKeywrods.Contains(identifier) ?
                         TokenType.Reserved :
                         TokenType.Identifier;
-                    tokens = [.. tokens, new Token(identifier, tokenType)];
+                    tokens = [.. tokens, new Token(identifier, tokenType, new CharRange(start ?? throw new Exception("Error getting token start in line " + chars.Length), lines.Length - 1))];
                 }
 
                 lexerLines = [.. lexerLines, new(i + 1, tokens)];
