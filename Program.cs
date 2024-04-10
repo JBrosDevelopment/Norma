@@ -8,12 +8,9 @@
 
             var lexerLines = Lexer.Tokenizer("""
                 // CLang Testing
-
-                print "input text"
-                var result = input
-                clear
-                print "Your input was, '$result$'"
                 
+                var result = input
+                if result == "hi" { print "hi" }
 
                 """);
             var parserLines = Parser.Parse(lexerLines);

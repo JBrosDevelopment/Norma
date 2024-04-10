@@ -7,10 +7,10 @@ namespace CustomLang
         /* 
          * This will take a Line[] and execute the code line by line
          */
-        public static int Execute(Line[] lines)
+        public static int Execute(Line[] lines, Function[]? functions = null, Variable[]? variables = null)
         {
-            Function[] functions = Function.InstantiateFunctions();
-            Variable[] variables = [];
+            functions ??= Function.InstantiateFunctions();
+            variables ??= [];
 
             int number_line = 0,
                 error_code = 0;

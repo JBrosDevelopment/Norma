@@ -20,15 +20,17 @@ namespace CustomLang
         }
         public class Line
         {
+            public Statement? Statement { get; set; } = null;
             public int Number { get; set; }
             public Token[] Tokens { get; set; }
-            public Line(int number, Token[] tokens)
+            public Line(int number, Token[] tokens, Statement? statement = null)
             {
                 Number = number;
                 Tokens = tokens;
+                Statement = statement;
             }
         }
-        internal static string[] ReservedKeywrods = ["var", "if", "else", "while"];
+        internal static string[] ReservedKeywrods = ["var", .. Statement.Statements.Select(x => x.Name)];
         /*
          * This is the Lexer part of the interpreter. It takes a string and outputs lines of code that contain tokens
          */

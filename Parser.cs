@@ -9,18 +9,22 @@ namespace CustomLang
          */
         public static Line[] Parse(Line[] lines)
         {
-            return lines;
-
             Line[] parserLines = [];
 
             for (int i = 0; i < lines.Length; i++)
             {
-                Line lexerLine = lines[i];
-                Token[] tokens = [];
+                Line line = lines[i];
+                Token[] tokens = line.Tokens;
 
-                for (int j = 0; j < lexerLine.Tokens.Length; j++)
+                for (int j = 0; j < tokens.Length; j++)
                 {
-
+                    if (tokens[i].Type == TokenType.Reserved)
+                    {
+                        if (tokens[i].Value == "if")
+                        {
+                            
+                        }
+                    }
                 }
 
                 parserLines = [.. parserLines, new Line(lines[i].Number, tokens)];
