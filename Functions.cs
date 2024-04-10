@@ -31,7 +31,7 @@ namespace CustomLang
         }
     }
     /*
-     * The print class for CLang
+     * The print function for CLang
      * takes input and prints it to the console
      */
     public class Print : Function 
@@ -51,7 +51,7 @@ namespace CustomLang
         }
     }
     /*
-     * The parse class for CLang
+     * The parse function for CLang
      * Parses string and returns a float
      */
     public class Parse : Function
@@ -67,6 +67,41 @@ namespace CustomLang
             float result = float.Parse(args[0].ToString());
 
             return result;
+        }
+    }
+    /*
+     * The input function for CLang
+     * Returns the input from the console
+     */
+    public class Input : Function
+    {
+        public Input()
+        {
+            Name = "input";
+            Params = 0;
+            Returns = true;
+        }
+        public override object? Execute(object[] args)
+        {
+            return Console.ReadLine();
+        }
+    }
+    /*
+     * The clear function for CLang
+     * Clears the console
+     */
+    public class Clear : Function
+    {
+        public Clear()
+        {
+            Name = "clear";
+            Params = 0;
+            Returns = false;
+        }
+        public override object? Execute(object[] args)
+        {
+            Console.Clear();
+            return null;
         }
     }
 }

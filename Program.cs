@@ -9,8 +9,10 @@
             var lexerLines = Lexer.Tokenizer("""
                 // CLang Testing
 
-                var result = parse "25"
-                print $result$
+                print "input text"
+                var result = input
+                clear
+                print "Your input was, '$result$'"
                 
 
                 """);

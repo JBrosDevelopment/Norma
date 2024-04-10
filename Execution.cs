@@ -93,7 +93,22 @@ namespace CustomLang
                                 {
                                     throw new Exception("Variable declaration is incorrect. Correct syntax is, 'var NAME = VALUE'");
                                 }
+
                                 string name = line.Tokens[1].Value;
+
+                                if (variables.Select(x => x.Name).Contains(name))
+                                {
+                                    throw new Exception($"A variable with the name '{name}' already exists");
+                                }
+                                if (functions.Select(x => x.Name).Contains(name))
+                                {
+                                    throw new Exception($"A function with the name '{name}' already exists");
+                                }
+                                if (ReservedKeywrods.Contains(name))
+                                {
+                                    throw new Exception($"'{name}' is a reserved token and cannot be a name for a variable");
+                                }
+
                                 object? value = GetValueFromTokens(line.Tokens.Skip(3).ToArray(), variables, functions);
 
                                 Variable var = new Variable(name, value);
