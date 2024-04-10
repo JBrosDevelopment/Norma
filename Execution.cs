@@ -6,7 +6,7 @@ namespace CustomLang
     {
         public static Function[] Functions = [
             new Print(),
-            new ParseAdd()
+            new Parse()
             ];
         public static int Execute(Line[] lines)
         {
@@ -29,30 +29,7 @@ namespace CustomLang
                         case TokenType.Identifier:
                             if (Functions.FirstOrDefault(x => x.Name == token.Value) is Function func)
                             {
-                                Token[][] parameterTokens = new Token[func.Params][];
-                                int paramsCount = 0;
-                                for (int i = 1; i < line.Tokens.Length; i++)
-                                {
-                                    if (line.Tokens[i].Type == TokenType.Symbol && line.Tokens[i].Value == ",")
-                                    {
-                                        paramsCount++;
-                                        continue;
-                                    }
-
-                                    if (parameterTokens[paramsCount] == null)
-                                        parameterTokens[paramsCount] = [line.Tokens[i]];
-                                    else
-                                        parameterTokens[paramsCount] = [.. parameterTokens[paramsCount], line.Tokens[i]];
-
-                                }
-                                object[] parameters = new object[func.Params];
-                                for (int i = 0; i < parameterTokens.Length; i++)
-                                {
-                                    parameters[i] = GetValueFromTokens(parameterTokens[i], variables);
-                                    if (parameters[i] == null)
-                                        throw new Exception($"Could not extract value from function parameter '{i + 1}'");
-                                }
-                                func.Execute(parameters);
+                                ExecuteFunction(func, line.Tokens, variables);
                             }
                             else
                             {
@@ -143,7 +120,34 @@ namespace CustomLang
             }
             return error_code;
         }
-        public static object? GetValueFromTokens(Token[] tokens, Variable[] variables)
+        internal static object? ExecuteFunction(Function func, Token[] tokens, Variable[] variables)
+        {
+            Token[][] parameterTokens = new Token[func.Params][];
+            int paramsCount = 0;
+            for (int i = 1; i < tokens.Length; i++)
+            {
+                if (tokens[i].Type == TokenType.Symbol && tokens[i].Value == ",")
+                {
+                    paramsCount++;
+                    continue;
+                }
+
+                if (parameterTokens[paramsCount] == null)
+                    parameterTokens[paramsCount] = [tokens[i]];
+                else
+                    parameterTokens[paramsCount] = [.. parameterTokens[paramsCount], tokens[i]];
+
+            }
+            object[] parameters = new object[func.Params];
+            for (int i = 0; i < parameterTokens.Length; i++)
+            {
+                parameters[i] = GetValueFromTokens(parameterTokens[i], variables);
+                if (parameters[i] == null)
+                    throw new Exception($"Could not extract value from function parameter '{i + 1}'");
+            }
+            return func.Execute(parameters);
+        }
+        internal static object? GetValueFromTokens(Token[] tokens, Variable[] variables)
         {
             object? value = null; 
 
@@ -234,7 +238,32 @@ namespace CustomLang
                     else
                         throw new Exception("Cannot have value after variable value");
                 }
-                value = tokens[0].Value;
+                if (variables.FirstOrDefault(x => x.Name == tokens[0].Value) is Variable var)
+                {
+                    value = var.Value.ToString();
+                }
+                else
+                {
+                    throw new Exception($"The variable '{tokens[0].Value}' is not defined yest or doesn't exist");
+                }
+            }
+            else if (tokens[0].Type == TokenType.Identifier)
+            {
+                if (Functions.FirstOrDefault(x => x.Name == tokens[0].Value) is Function func)
+                {
+                    if (func.Returns)
+                    {
+                        value = ExecuteFunction(func, tokens, variables);
+                    }
+                    else
+                    {
+                        throw new Exception($"The Function '{func.Name}' does not return a value");
+                    }
+                }
+                else
+                {
+                    throw new Exception($"Function '{tokens[0].Value}' does not exist");
+                }
             }
             else
             {

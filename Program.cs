@@ -5,7 +5,8 @@
         public static void Main(string[] args) 
         {
             Lexer.Line[] lines = Lexer.Tokenizer("""
-                parseAdd "25", 150
+                var result = parse "25"
+                print $result$
                 """);
             Execution.Execute(lines);
         }

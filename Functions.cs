@@ -4,7 +4,8 @@ namespace CustomLang
     {
         public string Name { get; set; } = "";
         public int Params { get; set; } = 0;
-        public abstract void Execute(object[] args);
+        public bool Returns { get; set; } = false;
+        public abstract object? Execute(object[] args);
     }
     public class Print : Function 
     {
@@ -12,28 +13,29 @@ namespace CustomLang
         {
             Name = "print";
             Params = 1;
+            Returns = false;
         }
-        public override void Execute(object[] args)
+        public override object? Execute(object[] args)
         {
             string text = string.Join("", args.Select(x => x.ToString()));
             Console.WriteLine(text);
+
+            return null;
         }
     }
-    public class ParseAdd : Function
+    public class Parse : Function
     {
-        public ParseAdd()
+        public Parse()
         {
-            Name = "parseAdd";
-            Params = 2;
+            Name = "parse";
+            Params = 1;
+            Returns = true;
         }
-        public override void Execute(object[] args)
+        public override object? Execute(object[] args)
         {
-            float text = float.Parse(args[0].ToString());
-            float add = float.Parse(args[1].ToString());
+            float result = float.Parse(args[0].ToString());
 
-            float result = text + add;
-
-            Console.WriteLine(result);
+            return result;
         }
     }
 }
