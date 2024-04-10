@@ -10,7 +10,23 @@
                 // CLang Testing
                 
                 var result = input
-                if result == "hi" { print "hi" }
+                if $result$ = "hi" {
+                    result = 50
+                }
+                elif $result$ = "ho" {
+                    result = 60
+                }
+                elif $result$ = "he" 
+                {
+                    result = 65
+                }
+                else { result = 70 }
+                var i = 0
+                while $i$ < 50
+                {
+                    print "$i$:$result$"
+                    i + 1
+                }
 
                 """);
             var parserLines = Parser.Parse(lexerLines);

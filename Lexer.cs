@@ -30,7 +30,7 @@ namespace CustomLang
                 Statement = statement;
             }
         }
-        internal static string[] ReservedKeywrods = ["var", .. Statement.Statements.Select(x => x.Name)];
+        internal static string[] ReservedKeywrods = ["var", "if", "elif", "else", "while"];
         /*
          * This is the Lexer part of the interpreter. It takes a string and outputs lines of code that contain tokens
          */
@@ -51,12 +51,13 @@ namespace CustomLang
                     isIdentifier = false,
                     isSymbolChar = false,
                     tempWasQuote = false;
-                string
-                    number = "",
-                    quote = "",
-                    variable = "",
-                    identifier = "";
-
+                string?
+                    number = null,
+                    quote = null,
+                    variable = null,
+                    identifier = null,
+                    symbol = "";
+                
                 for (int j = 0; j < chars.Length; j++)
                 {
                     char c = chars[j];
@@ -67,7 +68,7 @@ namespace CustomLang
                     if (isWhiteSpace(c) && !isQuotation)
                     {
                         isNumber = false;
-                        if (isVariable) throw new Exception("Can not have whitespace in between '$' in line" + (i + 1)); // added 1 to 'i' to remove line '0' from occuring
+                        if (isVariable) throw new Exception("Can not have whitespace in between '$' in line " + (i + 1)); // added 1 to 'i' to remove line '0' from occuring
                         isIdentifier = false;
                     }
                     else if (isNum(c))
@@ -80,6 +81,7 @@ namespace CustomLang
                         if (c == '"')
                         {
                             isQuotation = !isQuotation;
+                            quote ??= "";
                         }
                         else if (c == '$')
                         {
@@ -89,6 +91,23 @@ namespace CustomLang
                         }
                         else if(!isQuotation)
                         {
+                            symbol = c.ToString();
+                            
+                            if (c == '>' && chars.Length > j + 1 && chars[j + 1] == '=')
+                            {
+                                j++;
+                                symbol = ">=";
+                            }
+                            else if (c == '<' && chars.Length > j + 1 && chars[j + 1] == '=')
+                            {
+                                j++;
+                                symbol = "<=";
+                            }
+                            else if (c == '!' && chars.Length > j + 1 && chars[j + 1] == '=')
+                            {
+                                j++;
+                                symbol = "!=";
+                            }
                             isSymbolChar = true;
                             isNumber = false;
                             isVariable = false;
@@ -117,34 +136,35 @@ namespace CustomLang
                         throw new Exception("Character '" + c + "' is not valid in line " + (i + 1));
                     }
 
-                    if (!isNumber && number != "")
+                    if (!isNumber && number != null)
                     {
                         tokens = [.. tokens, new Token(number, TokenType.Number)];
-                        number = "";
+                        number = null;
                     }
-                    if (!isVariable && variable != "")
+                    if (!isVariable && variable != null)
                     {
                         tokens = [.. tokens, new Token(variable, TokenType.Variable)];
-                        variable = "";
+                        variable = null;
                     }
-                    if (!isQuotation && quote != "")
+                    if (!isQuotation && quote != null)
                     {
                         tokens = [.. tokens, new Token(quote, TokenType.String)];
-                        quote = "";
+                        quote = null;
                     }
-                    if (!isIdentifier && identifier != "")
+                    if (!isIdentifier && identifier != null)
                     {
                         TokenType tokenType = ReservedKeywrods.Contains(identifier) ?
                             TokenType.Reserved :
                             TokenType.Identifier; 
 
                         tokens = [.. tokens, new Token(identifier, tokenType)];
-                        identifier = "";
+                        identifier = null;
                     }
                     if (isSymbolChar)
                     {
-                        tokens = [.. tokens, new Token(c.ToString(), TokenType.Symbol)];
+                        tokens = [.. tokens, new Token(symbol, TokenType.Symbol)];
                         isSymbolChar = false;
+                        symbol = "";
                     }
                 }
                 if (isNumber) tokens = [.. tokens, new Token(number, TokenType.Number)];
@@ -173,7 +193,7 @@ namespace CustomLang
         }
         internal static bool isSymbol(char c)
         {
-            return (new[] { '=', '+', '-', '*', '/', '$', '"', ',', '(', ')' }).Any(x => x == c);
+            return (new[] { '=', '>', '<', '!', '+', '-', '*', '/', '$', '"', ',', '(', ')', '{', '}' }).Any(x => x == c);
         }
         internal static bool isAlpha(char c)
         {

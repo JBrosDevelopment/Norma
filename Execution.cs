@@ -13,13 +13,93 @@ namespace CustomLang
             variables ??= [];
 
             int number_line = 0,
-                error_code = 0;
+                code_index = 0,
+                error_code = 0,
+                last_if_line = 0;
+            bool last_if_was_true = false;
             try
             {
                 foreach (Line line in lines)
                 {
+                    code_index++;
                     number_line = line.Number;
-                    
+
+                    if (line.Statement != null)
+                    {
+                        Statement statement = line.Statement;
+                                                
+                        string input = "";
+                        foreach (var item in statement.Input)
+                        {
+                            if (item.Type == TokenType.Symbol)
+                            {
+                                input += item.Value + " ";
+                            }
+                            else
+                            {
+                                object? val = GetValueFromTokens([item], variables, functions);
+                                if (val == null) input += item.Value + " ";
+                                else input += val + " ";
+                            }
+                        }
+
+                        switch (statement.Type)
+                        {
+                            case Statement.StatementType.If:
+                                last_if_line = code_index;
+                                last_if_was_true = Statement.Evaluate(input);
+                                if (last_if_was_true)
+                                {
+                                    Execute(statement.Lines, functions, variables);
+                                }
+                                continue;
+                            case Statement.StatementType.ElIf:
+                                last_if_line = code_index;
+                                if (!last_if_was_true)
+                                {
+                                    last_if_was_true = Statement.Evaluate(input);
+                                    if (last_if_was_true)
+                                    {
+                                        Execute(statement.Lines, functions, variables);
+                                    }
+                                }
+                                continue;
+                            case Statement.StatementType.Else:
+                                if (last_if_line != code_index - 1)
+                                {
+                                    throw new Exception("Else statement needs to be directly after an if statement");
+                                }
+                                if (!last_if_was_true)
+                                {
+                                    Execute(statement.Lines, functions, variables);
+                                }
+                                continue;
+                            case Statement.StatementType.While:
+                                bool isnumber = int.TryParse(input, out int number);
+                                int index = 0;
+                                while (isnumber ? number > index : Statement.Evaluate(input))
+                                {
+                                    Execute(statement.Lines, functions, variables);
+                                    index++;
+                                    input = "";
+                                    foreach (var item in statement.Input)
+                                    {
+                                        if (item.Type == TokenType.Symbol)
+                                        {
+                                            input += item.Value + " ";
+                                        }
+                                        else
+                                        {
+                                            object? val = GetValueFromTokens([item], variables, functions);
+                                            if (val == null) input += item.Value + " ";
+                                            else input += val + " ";
+                                        }
+                                    }
+                                }
+                                continue;
+                        }
+                    }
+
                     if (line.Tokens.Length == 0)
                         continue;
 
@@ -50,7 +130,7 @@ namespace CustomLang
                                         case "+":
                                             if (float.TryParse(var.Value.ToString(), out float varValue) && float.TryParse(value.ToString(), out float setValue))
                                                 var.Value = varValue + setValue;
-                                            if (float.TryParse(var.Value.ToString(), out varValue))
+                                            else if (float.TryParse(var.Value.ToString(), out varValue))
                                                 throw new Exception("Can not add type string to number");
                                             else
                                                 var.Value = var.Value.ToString() + value.ToString();
