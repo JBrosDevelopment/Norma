@@ -1,4 +1,4 @@
-﻿namespace CustomLang
+﻿namespace NormaLang
 {
     public class Variable
     {

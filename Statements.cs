@@ -1,13 +1,13 @@
 ﻿using System.Data;
-using static CustomLang.Lexer;
+using static NormaLang.Lexer;
 
-namespace CustomLang
+namespace NormaLang
 {
     public class Statement
     {
         public enum StatementType
         {
-            If, Else, ElIf, While
+            If, Else, ElIf, While, For
         }
         public Statement(Token[] input, Line[] lines, StatementType type)
         {
@@ -18,6 +18,7 @@ namespace CustomLang
         public StatementType Type { get; set; }
         public Token[] Input { get; set; }
         public Line[] Lines { get; set; }
+        public static string[] StatementTypes = ["if", "elif", "else", "while", "for"];
         public static bool Evaluate(string input)
         {
             // Evaluate input and return bool as output

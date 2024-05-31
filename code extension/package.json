@@ -1,0 +1,29 @@
+{
+  "name": "norma",
+  "displayName": "Norma",
+  "description": "Language support for my Custom Language (Norma for shot) made in C#. View blog post, https://jbrosdev.hashnode.dev/guide-to-building-your-own-programming-language-with-c",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "norma",
+        "aliases": ["Norma", "norma"],
+        "extensions": [".norma"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "norma",
+        "scopeName": "source.norma",
+        "path": "./syntaxes/norma.tmLanguage.json"
+      }
+    ]
+  }
+}

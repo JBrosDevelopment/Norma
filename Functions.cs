@@ -1,4 +1,4 @@
-namespace CustomLang 
+namespace NormaLang 
 {
     /* 
      * This class is for any functions that want to be created.
@@ -44,7 +44,7 @@ namespace CustomLang
         }
         public override object? Execute(object[] args)
         {
-            string text = string.Join("", args.Select(x => x.ToString()));
+            string text = args[0].ToString();
             Console.WriteLine(text);
 
             return null;
@@ -102,6 +102,58 @@ namespace CustomLang
         {
             Console.Clear();
             return null;
+        }
+    }
+    /*
+     * The length function for array length
+     * returns the length of the array
+     */
+    public class Length : Function
+    {
+        public Length()
+        {
+            Name = "length";
+            Params = 1;
+            Returns = true;
+        }
+        public override object? Execute(object[] args)
+        {
+            if (args[0] is Array array)
+            {
+                return array.Length;
+            }
+            else if (args[0] is string str)
+            {
+                return str.Length;
+            } 
+            else
+            {
+                throw new Exception("Can not get length of variable that isn't type array or string");
+            }
+        }
+    }
+    /*
+     * The append function for array length
+     * returns the array with a value appended to it
+     */
+    public class Append : Function
+    {
+        public Append()
+        {
+            Name = nameof(Append).ToLower();
+            Params = 2;
+            Returns = true;
+        }
+        public override object? Execute(object[] args)
+        {
+            if (args[0] is object[] array)
+            {
+                return array.Append(args[1]).ToArray();
+            }
+            else
+            {
+                throw new Exception("Can not append to variable that is not array");
+            }
         }
     }
 }
