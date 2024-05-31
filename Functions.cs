@@ -31,7 +31,7 @@ namespace NormaLang
         }
     }
     /*
-     * The print function for CLang
+     * The print function for Norma
      * takes input and prints it to the console
      */
     public class Print : Function 
@@ -51,26 +51,7 @@ namespace NormaLang
         }
     }
     /*
-     * The parse function for CLang
-     * Parses string and returns a float
-     */
-    public class Parse : Function
-    {
-        public Parse()
-        {
-            Name = "parse";
-            Params = 1;
-            Returns = true;
-        }
-        public override object? Execute(object[] args)
-        {
-            float result = float.Parse(args[0].ToString());
-
-            return result;
-        }
-    }
-    /*
-     * The input function for CLang
+     * The input function for Norma
      * Returns the input from the console
      */
     public class Input : Function
@@ -87,7 +68,7 @@ namespace NormaLang
         }
     }
     /*
-     * The clear function for CLang
+     * The clear function for Norma
      * Clears the console
      */
     public class Clear : Function

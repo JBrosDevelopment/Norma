@@ -1,82 +1,82 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "CLang",
-	"scopeName": "source.clang",
+	"name": "Norma",
+	"scopeName": "source.norma",
 	"patterns": [
 		{
-			"name": "comment.line.double-slash.clang", 
+			"name": "comment.line.double-slash.norma", 
 			"match": "//.*$"
 		},
 		{
-			"name": "comment.block.clang",
+			"name": "comment.block.norma",
 			"begin": "/\\*",
 			"end": "\\*/"
 		},
 		{
-			"name": "constant.numeric.clang",
+			"name": "constant.numeric.norma",
 			"match": "\\b[0-9\\.]+\\b"
 		},
 		{
-			"name": "keyword.control.clang",
+			"name": "keyword.control.norma",
 			"match": "\\b(if|else|elif|while|for|in|return|point)\\b"
 		},
 		{
-			"name": "keyword.other.clang",
+			"name": "keyword.other.norma",
 			"match": "\\b(var|def|struct|new|true|false)\\b"
 		},
 		{
-			"name": "support.function.clang",
+			"name": "support.function.norma",
 			"match": "\\b(clear|print|input|parse)\\b"
 		},
 		{
-			"name": "variable.language.clang",
+			"name": "variable.language.norma",
 			"match": "\\$[a-zA-Z_][a-zA-Z0-9_]*\\$",
 			"captures": {
 				"0": {
-					"name": "variable.clang"
+					"name": "variable.norma"
 				}
 			}
 		},
 		{
-			"name": "variable.clang",
+			"name": "variable.norma",
 			"match": "\\$(.*?)\\$"
 		},
 		{
-			"name": "string.quoted.double.clang",
+			"name": "string.quoted.double.norma",
 			"begin": "\"",
 			"end": "\"",
 			"patterns": [
 			  {
-				"name": "variable.clang",
+				"name": "variable.norma",
 				"begin": "\\$",
 				"end": "\\$"
 			  },
 			  {
-				"name": "constant.character.escape.clang",
+				"name": "constant.character.escape.norma",
 				"match": "\\\\."
 			  }
 			]
 		},
 		{
-		  "name": "support.class.clang",
+		  "name": "support.class.norma",
 		  "match": "\\bstruct\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\b",
 		  "captures": {
 			"1": {
-			  "name": "entity.name.type.clang"
+			  "name": "entity.name.type.norma"
 			}
 		  }
 		},
 		{
-			"name": "variable-assignment.clang",
+			"name": "variable-assignment.norma",
 			"match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b\\s*(?=[+\\-*/\\=\\.in])",
 			"captures": {
 				"1": {
-					"name": "variable.clang"
+					"name": "variable.norma"
 				}
 			}
 		},
 		{
-			"name": "support.function.clang",
+			"name": "support.function.norma",
 			"match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b"
 		}
 	]

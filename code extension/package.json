@@ -14,7 +14,7 @@
       {
         "id": "norma",
         "aliases": ["Norma", "norma"],
-        "extensions": [".norma"],
+        "extensions": [".norm", ".norma"],
         "configuration": "./language-configuration.json"
       }
     ],
