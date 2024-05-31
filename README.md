@@ -4,7 +4,7 @@
 
 Norma is a programming language built in C# made to be extremely simple. It's syntax is similar to Python and Javascript, but has my own custom spin on it. 
 
-![Icon](Images/Norma%20(526px).png) -------------------------------
+![Icon](images/Norma%20(526px).png)
 
 Norma is a very simple language. To define a variable, use:
 ```js
