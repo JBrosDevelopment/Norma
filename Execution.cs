@@ -10,9 +10,9 @@ namespace NormaLang
         /* 
          * This will take a Line[] and execute the code line by line
          */
-        public static int Execute(Line[] lines, Function[]? functions = null, Variable[]? variables = null, Define[]? defined = null, Struct[]? structs = null)
+        public static int Execute(Line[] lines, IFunction[]? functions = null, Variable[]? variables = null, Define[]? defined = null, Struct[]? structs = null)
         {
-            functions ??= Function.InstantiateFunctions();
+            functions ??= IFunction.AllFunctions.ToArray();
             variables ??= [];
             defined ??= [];
             structs ??= [];
@@ -180,7 +180,7 @@ namespace NormaLang
                     switch (token.Type)
                     {
                         case TokenType.Identifier:
-                            if (functions.FirstOrDefault(x => x.Name == token.Value) is Function func)
+                            if (functions.FirstOrDefault(x => x.Name == token.Value) is IFunction func)
                             {
                                 ExecuteFunction(func, line.Tokens, variables, functions, defined, structs);
                             }
@@ -305,7 +305,7 @@ namespace NormaLang
             }
             return error_code;
         }
-        internal static void SetComplexVariable(Token[] tokens, ref Variable[] variables, Function[] functions, Define[] defined, Struct[] structs)
+        internal static void SetComplexVariable(Token[] tokens, ref Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs)
         {
             string[] parts = Regex.Split(string.Join("", tokens.Select(x => x.Value)), 
                 @"((?=\[)|(?<=\[))|(?=\])|(?<=\])|(?=\.)|(?<=\.)|(?=\+)|(?<=\+)|(?=\-)|(?<=\-)|(?=\*)|(?<=\*)|(?=\/)|(?<=\/)|(?=\=)|(?<=\=)"
@@ -431,7 +431,7 @@ namespace NormaLang
 
             variable.Value = value;
         }
-        internal static object? ExecuteDefinedFunction(Define def, Token[] tokens, Function[] functions, Variable[] variables, Define[] defined, Struct[] structs)
+        internal static object? ExecuteDefinedFunction(Define def, Token[] tokens, IFunction[] functions, Variable[] variables, Define[] defined, Struct[] structs)
         {
             Token[][] parameterTokens = new Token[def.Parameters.Length][];
             int paramsCount = 0;
@@ -466,7 +466,7 @@ namespace NormaLang
             variables = variables.Where(x => !parameters.Any(y => y.Name == x.Name)).ToArray();
             return val;
         }
-        internal static object? ExecuteFunction(Function func, Token[] tokens, Variable[] variables, Function[] functions, Define[] defined, Struct[] structs)
+        internal static object? ExecuteFunction(IFunction func, Token[] tokens, Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs)
         {
             Token[][] parameterTokens = new Token[func.Params][];
             int paramsCount = 0;
@@ -493,7 +493,7 @@ namespace NormaLang
             }
             return func.Execute(parameters);
         }
-        internal static object? GetValueFromTokens(Token[] tokens, Variable[] variables, Function[] functions, Define[] defined, Struct[] structs, bool getVariableFromIdentifier = false)
+        internal static object? GetValueFromTokens(Token[] tokens, Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs, bool getVariableFromIdentifier = false)
         {
             object? value = null; 
 
@@ -544,18 +544,19 @@ namespace NormaLang
                         for (int i = 0; i < tokens.Length; i++)
                         {
                             string val = tokens[i].Value;
+                            object ret = null;
                             if (tokens[i].Type == TokenType.Variable)
                             {
                                 string[] parts = Regex.Split(tokens[i].Value, @"((?=\[)|(?<=\[))|(?=\])|(?<=\])|(?=\.)|(?<=\.)").Where(x => x != "" && x != " ").ToArray();
                                 if (variables.FirstOrDefault(x => x.Name == val.ToString()) is Variable var)
                                 {
-                                    val = var.Value.ToString();
+                                    ret = var.Value;
                                 }
                                 else if (parts[1] == "[" || parts[1] == ".")
                                 {
                                     string name = parts[0];
                                     Variable variable = variables.FirstOrDefault(x => x.Name == name);
-                                    object ret = variable.Value;
+                                    ret = variable.Value;
 
                                     for (int j = 1; j < parts.Length; j++)
                                     {
@@ -602,17 +603,17 @@ namespace NormaLang
                                             throw new Exception("Expected syntax 'varName[INDEX]'");
                                         }
                                     }
-
-                                    if (ret is object[] arr)
-                                    {
-                                        ret = arrayToText(arr);
-                                    }
-                                    val = ret.ToString();
                                 }
                                 else
                                 {
                                     throw new Exception($"The variable '{val}' is not defined yet or doesn't exist");
                                 }
+
+                                if (ret is object[] arr)
+                                {
+                                    ret = ArrayToText(arr);
+                                }
+                                val = ret.ToString();
                             }
                             text += val;
                         }
@@ -725,7 +726,7 @@ namespace NormaLang
             }
             else if (tokens[0].Type == TokenType.Identifier)
             {
-                if (functions.FirstOrDefault(x => x.Name == tokens[0].Value) is Function func)
+                if (functions.FirstOrDefault(x => x.Name == tokens[0].Value) is IFunction func)
                 {
                     if (func.Returns)
                     {
@@ -838,19 +839,19 @@ namespace NormaLang
             }
             return value;
         }
-        internal static string arrayToText(object[] objects)
+        internal static string ArrayToText(object[] objects)
         {
             string text = "[";
             for (int i = 0; i < objects.Length; i++)
             {
                 object obj = objects[i];
-                if (obj is object[] o) obj = arrayToText(o);
+                if (obj is object[] o) obj = ArrayToText(o);
                 if (obj is ExpandoObject e) obj = ((IDictionary<string, object>)e)["__struct_name"];
                 text += obj + (i != objects.Length - 1 ? ", " : "");
             }
             return text + "]";
         }
-        internal static object[] GetArrayValues(object[] values, Variable[] variables, Function[] functions, Define[] defined, Struct[] structs)
+        internal static object[] GetArrayValues(object[] values, Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs)
         {
             for (int i = 0; i < values.Length; i++)
             {

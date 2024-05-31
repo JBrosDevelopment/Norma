@@ -1,0 +1,58 @@
+print "Input Name"
+
+var name = input // assume input is 'John Doe'
+clear
+print "Hello World! $name$" // Hello World! John Doe
+
+var sub = substring $name$, 2, 2
+print "substring: $sub$" // substring: hn
+
+var ind = indexOf $name$, "e"
+print "index of: $ind$" // index of: 7
+
+var lower = toLower $name$
+print "lower: $lower$" // lower: john doe
+
+var upper = toUpper $name$
+print "upper: $upper$" // upper: JOHN DOE
+
+var tr = trim " yes 1   "
+print "trim of ' yes 1   ': '$tr$'" // trim of ' yes 1   ': 'yes 1'
+
+var revStr = reverse $name$
+print "reverse string: $revStr$" // reverse string: eoD nhoJ
+
+var strLen = length $name$
+print "length of name: $strLen$" // length of name: 8
+
+
+var array = [1, 3, 9, 5, 4] 
+print $array$ // [1, 3, 9, 5, 4]
+
+var lenArr = length $array$
+print "length of array: $lenArr$" // length of array: 5
+
+var revArr = reverse $array$
+print "reverse array: $revArr$" // reverse array: [4, 5, 9, 3, 1]
+
+var app = append $array$, 100
+print "append 100: $app$" // append 100: [1, 3, 9, 5, 4, 100]
+
+var rem = remove $array$, 1
+print "remove index 1: $rem$" // remove index 1: [1, 9, 5, 4]
+
+var ins = insert $array$, 1, 99
+print "insert: $ins$" // insert: [1, 99, 3, 9, 5, 4]
+
+var sli = slice $array$, 1, 3
+print "slice: $sli$" // slice: [3, 9, 5]
+
+var conc = concat $array$, ["yes", "no"]
+print "concat: $conc$" // concat: [1, 3, 9, 5, 4, yes, no]
+
+var st = sort $array$
+print "sort: $st$" // sort: [1, 3, 4, 5, 9]
+
+exit
+
+print "should not see this"

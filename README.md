@@ -108,13 +108,21 @@ for value in $array$ {
     print $value$
 }
 ```
-There are some built in functions as well:
-```js
-print "Please input your name" // prints to console
-var name = input // gets input from console
-clear // clears console
-var length = length $name$ // returns length of string
-length = length $array$ // also returns length of array
-array = append $array$, 150 // append value to array
-// more are being made
-```
+There are many built in functions as well ([Test file](FunctionTesting.norm)):
+- `print "text"`
+- `input`
+- `clear`
+- `exit`
+- `substring "text", $start$, $len$`
+- `indexOf "text", "e"`
+- `toLower "Text"`
+- `toUpper "text"`
+- `trim " text "`
+- `revere "string or array"`
+- `length ["string", "or", "array"]`
+- `append [0, 1], 5`
+- `remove $index$`
+- `insert $array$, $index$, $value$`
+- `slice [99, 98, 97, 96, 95], $start$, $len$ `
+- `concat $array$, [0, 1, 2, 3]`
+- `sort [9, 5, 7, 2, 0]`

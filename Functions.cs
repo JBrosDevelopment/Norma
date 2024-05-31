@@ -1,50 +1,75 @@
 namespace NormaLang 
 {
     /* 
-     * This class is for any functions that want to be created.
-     * public class FUNCTIONNAME : Function
+     * This interface is for any functions that want to be created:
+     * 
+     * public class FUNCTION_NAME : IFunction {
+     * 
+     *     public string Name { get; } = nameof(FUNCTION_NAME).ToLower();
+     *     public int Params { get; } = NUMBER_OF_PARAMETERS;
+     *     public bool Returns { get; } = IF_THE_FUNCTION_RETURNS_A_VALUE;
+     *     
+     *     public object? Execute(object[] args)
+     *     {
+     *         var param1 = args[0];
+     *         return null;
+     *     }
+     * }
      */
-    public abstract class Function 
+    public interface IFunction 
     {
-        public static List<Function> AllFunctions { get; } = new List<Function>();
-        public string Name { get; set; } = "";
-        public int Params { get; set; } = 0;
-        public bool Returns { get; set; } = false;
+        public static List<IFunction> AllFunctions { get; set; } = new List<IFunction>()
+        {
+            // console:
+            new FPrint(),
+            new FInput(),
+            new FClear(),
+            new FExit(),
+            // stirng:
+            new FSubstring(),
+            new FIndexOf(),
+            new FToLower(),
+            new FToUpper(),
+            new FTrim(),
+            new FReverse(),
+            // array:
+            new FLength(),
+            new FAppend(),
+            new FRemove(),
+            new FInsert(),
+            new FSlice(),
+            new FConcat(),
+            new FSort(),
+        };
+        public string Name { get; }
+        public int Params { get; }
+        public bool Returns { get; }
         public abstract object? Execute(object[] args);
-        public Function()
+        internal static string ValueToString(object value)
         {
-            AllFunctions.Add(this);
-        }
-        public static Function[] InstantiateFunctions()
-        {
-            // Use Reflection to get all Functions dynamically
-            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly(); // Create Assembly Reference 
-            Type[] functionTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(Function))).ToArray(); // Get all Function References into an array
-
-            foreach (Type functionType in functionTypes) // loop through each index in the functionTypes array
+            if (value is object[] o)
             {
-                Function function = (Function)Activator.CreateInstance(functionType); // Create a new Function instance 
+                return Execution.ArrayToText(o);
             }
-            // Now, 'Function.AllFunctions' can be used because all functions have been instantiated causing them to be added to the list
-
-            return AllFunctions.ToArray();
+            else
+            {
+                return value.ToString()!;
+            }
         }
     }
+    #region Console
     /*
      * The print function for Norma
      * takes input and prints it to the console
      */
-    public class Print : Function 
+    public class FPrint : IFunction 
     {
-        public Print()
+        public string Name { get; } = "print";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = false;
+        public object? Execute(object[] args)
         {
-            Name = "print";
-            Params = 1;
-            Returns = false;
-        }
-        public override object? Execute(object[] args)
-        {
-            string text = args[0].ToString();
+            string text = IFunction.ValueToString(args[0]);
             Console.WriteLine(text);
 
             return null;
@@ -54,15 +79,12 @@ namespace NormaLang
      * The input function for Norma
      * Returns the input from the console
      */
-    public class Input : Function
+    public class FInput : IFunction
     {
-        public Input()
-        {
-            Name = "input";
-            Params = 0;
-            Returns = true;
-        }
-        public override object? Execute(object[] args)
+        public string Name { get; } = "input";
+        public int Params { get; } = 0;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
         {
             return Console.ReadLine();
         }
@@ -71,33 +93,122 @@ namespace NormaLang
      * The clear function for Norma
      * Clears the console
      */
-    public class Clear : Function
+    public class FClear : IFunction
     {
-        public Clear()
-        {
-            Name = "clear";
-            Params = 0;
-            Returns = false;
-        }
-        public override object? Execute(object[] args)
+        public string Name { get; } = "clear";
+        public int Params { get; } = 0;
+        public bool Returns { get; } = false;
+        public object? Execute(object[] args)
         {
             Console.Clear();
             return null;
         }
     }
     /*
-     * The length function for array length
-     * returns the length of the array
+     * The Exit function for Norma
+     * Exits the program
      */
-    public class Length : Function
+    public class FExit : IFunction
     {
-        public Length()
+        public string Name { get; } = "exit";
+        public int Params { get; } = 0;
+        public bool Returns { get; } = false;
+        public object? Execute(object[] args)
         {
-            Name = "length";
-            Params = 1;
-            Returns = true;
+            Environment.Exit(0);
+            return null;
         }
-        public override object? Execute(object[] args)
+    }
+    #endregion
+    #region String
+    public class FSubstring : IFunction
+    {
+        public string Name { get; } = "substring";
+        public int Params { get; } = 3;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            var text = IFunction.ValueToString(args[0]);
+            var start = int.Parse(IFunction.ValueToString(args[1]));
+            var length = int.Parse(IFunction.ValueToString(args[2]));
+            return text?.Substring(start, length);
+        }
+    }
+    public class FIndexOf : IFunction
+    {
+        public string Name { get; } = "indexOf";
+        public int Params { get; } = 2;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            var text = IFunction.ValueToString(args[0]);
+            var name = IFunction.ValueToString(args[1]);
+            return text?.IndexOf(name!);
+        }
+    }
+    public class FToUpper : IFunction
+    {
+        public string Name { get; } = "toUpper";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            var text = IFunction.ValueToString(args[0]);
+            return text?.ToUpper();
+        }
+    }
+    public class FToLower : IFunction
+    {
+        public string Name { get; } = "toLower";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            var text = IFunction.ValueToString(args[0]);
+            return text?.ToLower();
+        }
+    }
+    public class FTrim : IFunction
+    {
+        public string Name { get; } = "trim";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            var text = IFunction.ValueToString(args[0]);
+            return text?.Trim();
+        }
+    }
+    public class FReverse : IFunction
+    {
+        public string Name { get; } = "reverse";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            if (args[0] is object[] array)
+            {
+                object[] ar = array.Reverse().ToArray();
+                return ar;
+            }
+            else if (args[0] is string str)
+            {
+                return new string(str.Reverse().ToArray());
+            }
+            else
+            {
+                throw new Exception("Argument must be an array or a string");
+            }
+        }
+    }
+    #endregion
+    #region Array
+    public class FLength : IFunction
+    {
+        public string Name { get; } = "length";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
         {
             if (args[0] is Array array)
             {
@@ -113,19 +224,12 @@ namespace NormaLang
             }
         }
     }
-    /*
-     * The append function for array length
-     * returns the array with a value appended to it
-     */
-    public class Append : Function
+    public class FAppend : IFunction
     {
-        public Append()
-        {
-            Name = nameof(Append).ToLower();
-            Params = 2;
-            Returns = true;
-        }
-        public override object? Execute(object[] args)
+        public string Name { get; } = "append";
+        public int Params { get; } = 2;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
         {
             if (args[0] is object[] array)
             {
@@ -137,4 +241,110 @@ namespace NormaLang
             }
         }
     }
+    public class FRemove : IFunction
+    {
+        public string Name { get; } = "remove";
+        public int Params { get; } = 2;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            if (args[0] is object[] array)
+            {
+                var index = int.Parse(IFunction.ValueToString(args[1]));
+                if (index < 0 || index >= array.Length)
+                {
+                    throw new Exception("Index out of bounds");
+                }
+                return array.Where((_, i) => i != index).ToArray();
+            }
+            else
+            {
+                throw new Exception("Cannot remove from a variable that is not an array");
+            }
+        }
+    }
+    public class FInsert : IFunction
+    {
+        public string Name { get; } = "insert";
+        public int Params { get; } = 3;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            if (args[0] is object[] array)
+            {
+                var index = int.Parse(IFunction.ValueToString(args[1]));
+                if (index < 0 || index > array.Length)
+                {
+                    throw new Exception("Index out of bounds");
+                }
+                var list = array.ToList();
+                list.Insert(index, args[2]);
+                return list.ToArray();
+            }
+            else
+            {
+                throw new Exception("Cannot insert into a variable that is not an array");
+            }
+        }
+    }
+    public class FSlice : IFunction
+    {
+        public string Name { get; } = "slice";
+        public int Params { get; } = 3;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            if (args[0] is object[] array)
+            {
+                var start = int.Parse(IFunction.ValueToString(args[1]));
+                var length = int.Parse(IFunction.ValueToString(args[2]));
+                if (start < 0 || start >= array.Length || length < 0 || start + length > array.Length)
+                {
+                    throw new Exception("Invalid start or length for slice operation");
+                }
+                return array.Skip(start).Take(length).ToArray();
+            }
+            else
+            {
+                throw new Exception("Cannot slice a variable that is not an array");
+            }
+        }
+    }
+    public class FConcat : IFunction
+    {
+        public string Name { get; } = "concat";
+        public int Params { get; } = 2;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            if (args[0] is object[] array1 && args[1] is object[] array2)
+            {
+                return array1.Concat(array2).ToArray();
+            }
+            else
+            {
+                throw new Exception("Both arguments must be arrays");
+            }
+        }
+    }
+
+    public class FSort : IFunction
+    {
+        public string Name { get; } = "sort";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            if (args[0] is object[] array)
+            {
+                var sortedArray = array.OrderBy(x => x).ToArray();
+                return sortedArray;
+            }
+            else
+            {
+                throw new Exception("Argument must be an array");
+            }
+        }
+    }
+    #endregion
 }
