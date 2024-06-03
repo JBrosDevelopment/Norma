@@ -4,7 +4,14 @@
 
 Norma is a programming language built in C# made to be extremely simple. It's syntax is similar to Python and JavaScript, but has my own custom spin on it. 
 
-![Icon](images/Norma%20(526px).png)
+Here is the [Nuget Package](https://www.nuget.org/packages/Norma/) if you want to add it to your C# project
+> `dotnet add package Norma`
+
+<p align="center">
+  <a>
+    <img src="https://raw.githubusercontent.com/JBrosDevelopment/Norma/main/images/Norma%20(526px).png" alt="icon">
+  </a>
+</p>
 
 Norma is a very simple language. To define a variable, use:
 ```js
