@@ -126,3 +126,8 @@ There are many built in functions as well ([Test file](FunctionTesting.norm)):
 - `slice [99, 98, 97, 96, 95], $start$, $len$ `
 - `concat $array$, [0, 1, 2, 3]`
 - `sort [9, 5, 7, 2, 0]`
+- `runCode $code$`
+- `readFile "path/to/file.txt"`
+- `writeFile "path/to/file.txt", "text"`
+- `createFile "path/to/file.txt"`
+- `deleteFile "path/to/file.txt"`

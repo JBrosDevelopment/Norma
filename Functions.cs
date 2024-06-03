@@ -24,7 +24,13 @@ namespace NormaLang
             new FPrint(),
             new FInput(),
             new FClear(),
+            // utitlity:
             new FExit(),
+            new FRunCode(),
+            new FReadFile(),
+            new FWriteFile(),
+            new FCreateFile(),
+            new FDeleteFile(),
             // stirng:
             new FSubstring(),
             new FIndexOf(),
@@ -104,10 +110,8 @@ namespace NormaLang
             return null;
         }
     }
-    /*
-     * The Exit function for Norma
-     * Exits the program
-     */
+    #endregion
+    #region Utility
     public class FExit : IFunction
     {
         public string Name { get; } = "exit";
@@ -116,6 +120,70 @@ namespace NormaLang
         public object? Execute(object[] args)
         {
             Environment.Exit(0);
+            return null;
+        }
+    }
+    public class FRunCode : IFunction
+    {
+        public string Name { get; } = "runCode";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = false;
+        public object? Execute(object[] args)
+        {
+            var code = IFunction.ValueToString(args[0]);
+
+            var lexerLines = Lexer.Tokenizer(code);
+            var parserLines = Parser.Parse(lexerLines);
+            Execution.Execute(parserLines);
+
+            return null;
+        }
+    }
+    public class FReadFile : IFunction
+    {
+        public string Name { get; } = "readFile";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            var file = IFunction.ValueToString(args[0]);
+            return File.ReadAllText(file);
+        }
+    }
+    public class FWriteFile : IFunction
+    {
+        public string Name { get; } = "writeFile";
+        public int Params { get; } = 2;
+        public bool Returns { get; } = false;
+        public object? Execute(object[] args)
+        {
+            var file = IFunction.ValueToString(args[0]);
+            var text = IFunction.ValueToString(args[1]);
+            File.WriteAllText(file, text);
+            return null;
+        }
+    }
+    public class FCreateFile : IFunction
+    {
+        public string Name { get; } = "createFile";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = false;
+        public object? Execute(object[] args)
+        {
+            var file = IFunction.ValueToString(args[0]);
+            File.Create(file).Close();
+            return null;
+        }
+    }
+    public class FDeleteFile : IFunction
+    {
+        public string Name { get; } = "deleteFile";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = false;
+        public object? Execute(object[] args)
+        {
+            var file = IFunction.ValueToString(args[0]);
+            File.Delete(file);
             return null;
         }
     }

@@ -7,10 +7,40 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationIcon>images\Norma.ico</ApplicationIcon>
+    <Title>Norma Language</Title>
+    <Company>JBros Development</Company>
+    <Authors>Joseph H</Authors>
+    <Description>Library for using Norma in C# project</Description>
+    <PackageProjectUrl>https://github.com/JBrosDevelopment/Norma.git</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/JBrosDevelopment/Norma.git</RepositoryUrl>
+    <PackageTags>language;norma;programming</PackageTags>
+    <NeutralLanguage>aa</NeutralLanguage>
+    <PackageLicenseFile>LISENCE</PackageLicenseFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
-
+	
   <ItemGroup>
     <Content Include="images\Norma.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="images\Norma %28128px%29.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="images\Norma %28526px%29.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="LISENCE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 	
 </Project>
