@@ -1,0 +1,74 @@
+def endsWith: str, end {
+    var len = length $str$
+    var ind = ($len$ - 1)
+    if $str[ind]$ = $end$ {
+        return true
+    }
+    else {
+        return false
+    }
+}
+def replace: val, check, rep {
+    var str = ""
+    for c in $val$ {
+        if $c$ = $check$ {
+            str + $rep$
+        }
+        else {
+            str + $c$
+        }
+    }
+    return $str$
+}
+def combinePath: path1, path2 {
+    var endsWithSlash = endsWith $path1$, "\\"
+    if $endsWithSlash$ = false {
+        endsWithSlash = endsWith $path1$, "/"
+    }
+    if $endsWithSlash$ = true {
+        var path = "$path1$$path2$"
+        var rep = replace $path$, "/", "\\"
+        return $rep$
+    }
+    else {
+        var path = "$path1$\\$path2$"
+        var rep = replace $path$, "/", "\\"
+        return $rep$
+    }
+}
+def use: relPath {
+    var path = combinePath envDir, $relPath$
+    var content = readFile $path$
+    runCode $content$
+}
+def split: text, char {
+    var parts = []
+    var str = ""
+    for c in $text$ {
+        if $c$ = $char$ {
+            parts = append $parts$, $str$
+            str = ""
+        }
+        else {
+            str + $c$
+        }
+    }
+    parts = append $parts$, $str$
+    return $parts$
+}
+def toCharArray: text {
+    var parts = []
+    for c in $text$ {
+        parts = append $parts$, $c$
+    }
+    return $parts$
+}
+def contains: array, value {
+    var ret = false
+    for i in $array$ {
+        if $i$ = $value$ {
+            ret = true
+        }
+    }
+    return $ret$
+}

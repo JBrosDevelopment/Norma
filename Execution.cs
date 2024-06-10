@@ -7,16 +7,16 @@ namespace NormaLang
     public class Execution
     {
         private static object? Returning = null;
-        /* 
+
+        public static IFunction[] Functions = IFunction.AllFunctions.ToArray();
+        public static Variable[] Variables = [];
+        public static Define[] Defined = [];
+        public static Struct[] Structs = [];
+        /*
          * This will take a Line[] and execute the code line by line
          */
-        public static int Execute(Line[] lines, IFunction[]? functions = null, Variable[]? variables = null, Define[]? defined = null, Struct[]? structs = null)
+        public static int Execute(Line[] lines)
         {
-            functions ??= IFunction.AllFunctions.ToArray();
-            variables ??= [];
-            defined ??= [];
-            structs ??= [];
-
             int number_line = 0,
                 code_index = 0,
                 error_code = 0,
@@ -51,9 +51,26 @@ namespace NormaLang
                                         tokens = statement.Input.Skip(i).ToArray();
                                         i += statement.Input.Length - 1;
                                     }
-                                    object? val = GetValueFromTokens(tokens, variables, functions, defined, structs);
-                                    if (val == null) input += item.Value + " ";
-                                    else input += val + " ";
+                                    else if (item.Type == TokenType.Reserved)
+                                    {
+                                        input += item.Value + " ";
+                                    }
+                                    else
+                                    {
+                                        object? val = GetValueFromTokens(tokens);
+                                        char[] ar = val.ToString().ToCharArray();
+                                        if (val == null) input += item.Value + " ";
+                                        else if (val.ToString() == "") input += "none";
+                                        else
+                                        {
+                                            val = "";
+                                            foreach (var c in ar)
+                                            {
+                                                val += ((int)c).ToString();
+                                            }
+                                            input += val + " ";
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -65,7 +82,7 @@ namespace NormaLang
                                 last_if_was_true = Statement.Evaluate(input);
                                 if (last_if_was_true)
                                 {
-                                    Execute(statement.Lines, functions, variables, defined, structs);
+                                    Execute(statement.Lines);
                                 }
                                 continue;
                             case Statement.StatementType.ElIf:
@@ -75,7 +92,7 @@ namespace NormaLang
                                     last_if_was_true = Statement.Evaluate(input);
                                     if (last_if_was_true)
                                     {
-                                        Execute(statement.Lines, functions, variables, defined, structs);
+                                        Execute(statement.Lines);
                                     }
                                 }
                                 continue;
@@ -86,7 +103,7 @@ namespace NormaLang
                                 }
                                 if (!last_if_was_true)
                                 {
-                                    Execute(statement.Lines, functions, variables, defined, structs);
+                                    Execute(statement.Lines);
                                 }
                                 continue;
                             case Statement.StatementType.While:
@@ -94,7 +111,7 @@ namespace NormaLang
                                 int index = 0;
                                 while (isnumber ? number > index : Statement.Evaluate(input))
                                 {
-                                    Execute(statement.Lines, functions, variables, defined, structs);
+                                    Execute(statement.Lines);
                                     index++;
                                     input = "";
                                     for (int i = 0; i < statement.Input.Length; i++)
@@ -112,7 +129,7 @@ namespace NormaLang
                                                 tokens = statement.Input.Skip(i).ToArray();
                                                 i += statement.Input.Length - 1;
                                             }
-                                            object? _val = GetValueFromTokens(tokens, variables, functions, defined, structs);
+                                            object? _val = GetValueFromTokens(tokens);
                                             if (_val == null) input += item.Value + " ";
                                             else input += _val + " ";
                                         }
@@ -130,9 +147,9 @@ namespace NormaLang
                                 }
                                 string name = statement.Input[0].Value;
                                 Variable var = new Variable(name, 0);
-                                variables = variables.Append(var).ToArray();
+                                Variables = Variables.Append(var).ToArray();
 
-                                object val = GetValueFromTokens(statement.Input.Skip(2).ToArray(), variables, functions, defined, structs);
+                                object val = GetValueFromTokens(statement.Input.Skip(2).ToArray());
                                 if (val is null)
                                 {
                                     throw new Exception("Error getting length from for loop");
@@ -142,7 +159,7 @@ namespace NormaLang
                                 {
                                     for (var.Value = 0; int.Parse(var.Value.ToString()) < length; var.Value = (int.Parse(var.Value.ToString()) + 1))
                                     {
-                                        Execute(statement.Lines, functions, variables, defined, structs);
+                                        Execute(statement.Lines);
                                     }
                                 }
                                 else
@@ -155,22 +172,22 @@ namespace NormaLang
                                     foreach (var item in vals)
                                     {
                                         var.Value = item;
-                                        Execute(statement.Lines, functions, variables, defined, structs);
+                                        Execute(statement.Lines);
                                     }
                                 }
 
 
-                                variables = variables.Where(x => x != var).ToArray();
+                                Variables = Variables.Where(x => x != var).ToArray();
                                 continue;
                         }
                     }
                     else if (line.Defined != null)
                     {
-                        defined = [.. defined, line.Defined];
+                        Defined = [.. Defined, line.Defined];
                     }
                     else if (line.Struct != null)
                     {
-                        structs = [.. structs, line.Struct];
+                        Structs = [.. Structs, line.Struct];
                     }
 
                     if (line.Tokens.Length == 0)
@@ -180,17 +197,17 @@ namespace NormaLang
                     switch (token.Type)
                     {
                         case TokenType.Identifier:
-                            if (functions.FirstOrDefault(x => x.Name == token.Value) is IFunction func)
+                            if (Functions.FirstOrDefault(x => x.Name == token.Value) is IFunction func)
                             {
-                                ExecuteFunction(func, line.Tokens, variables, functions, defined, structs);
+                                ExecuteFunction(func, line.Tokens);
                             }
-                            else if (defined.FirstOrDefault(x => x.Name == token.Value) is Define def)
+                            else if (Defined.FirstOrDefault(x => x.Name == token.Value) is Define def)
                             {
-                                ExecuteDefinedFunction(def, line.Tokens, functions, variables, defined, structs);
+                                ExecuteDefinedFunction(def, line.Tokens);
                             }
                             else
                             {
-                                if (variables.FirstOrDefault(x => x.Name == token.Value) is Variable var)
+                                if (Variables.FirstOrDefault(x => x.Name == token.Value) is Variable var)
                                 {
                                     if (line.Tokens.Length < 3)
                                         throw new Exception("Variable operation syntax is incorrect. Correct syntax is, 'NAME = VALUE' where '=' can be any operator");
@@ -200,11 +217,11 @@ namespace NormaLang
 
                                     if (var.Value is object[] obj && line.Tokens[1].Value == "[" || line.Tokens[1].Value == ".")
                                     {
-                                        SetComplexVariable(line.Tokens, ref variables, functions, defined, structs);
+                                        SetComplexVariable(line.Tokens);
                                     }
                                     else
                                     {
-                                        object value = GetValueFromTokens(line.Tokens.Skip(2).ToArray(), variables, functions, defined, structs);
+                                        object value = GetValueFromTokens(line.Tokens.Skip(2).ToArray());
 
                                         switch (line.Tokens[1].Value)
                                         {
@@ -214,7 +231,7 @@ namespace NormaLang
                                             case "+":
                                                 if (float.TryParse(var.Value.ToString(), out float varValue) && float.TryParse(value.ToString(), out float setValue))
                                                     var.Value = varValue + setValue;
-                                                else if (float.TryParse(var.Value.ToString(), out varValue))
+                                                else if (var.Value is not string && float.TryParse(value.ToString(), out _))
                                                     throw new Exception("Can not add type string to number");
                                                 else
                                                     var.Value = var.Value.ToString() + value.ToString();
@@ -243,7 +260,7 @@ namespace NormaLang
                                 }
                                 else
                                 {
-                                    throw new Exception($"'{token.Value}' is not defined in this context");
+                                    throw new Exception($"'{token.Value}' is not Defined in this context");
                                 }
                             }
                             break;
@@ -261,11 +278,7 @@ namespace NormaLang
 
                                 string name = line.Tokens[1].Value;
 
-                                if (variables.Select(x => x.Name).Contains(name))
-                                {
-                                    throw new Exception($"A variable with the name '{name}' already exists");
-                                }
-                                if (functions.Select(x => x.Name).Contains(name))
+                                if (Functions.Select(x => x.Name).Contains(name))
                                 {
                                     throw new Exception($"A function with the name '{name}' already exists");
                                 }
@@ -274,15 +287,19 @@ namespace NormaLang
                                     throw new Exception($"'{name}' is a reserved token and cannot be a name for a variable");
                                 }
 
-                                object? value = GetValueFromTokens(line.Tokens.Skip(3).ToArray(), variables, functions, defined, structs);
+                                object? value = GetValueFromTokens(line.Tokens.Skip(3).ToArray());
 
                                 Variable var = new Variable(name, value);
+                                if (Variables.FirstOrDefault(x => x.Name == name) is Variable v)
+                                {
+                                    v = var;
+                                }
 
-                                variables = variables.Append(var).ToArray();
+                                Variables = Variables.Append(var).ToArray();
                             }
                             else if (token.Value == "return")
                             {
-                                object? value = GetValueFromTokens(line.Tokens.Skip(1).ToArray(), variables, functions, defined, structs);
+                                object? value = GetValueFromTokens(line.Tokens.Skip(1).ToArray());
                                 Returning = value;
                             }
                             else
@@ -300,19 +317,19 @@ namespace NormaLang
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message + $" -- Line '{number_line}'");
+                Console.WriteLine(e.Message + $" -- Line: '{number_line}'");
                 error_code = 1;
             }
             return error_code;
         }
-        internal static void SetComplexVariable(Token[] tokens, ref Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs)
+        internal static void SetComplexVariable(Token[] tokens)
         {
             string[] parts = Regex.Split(string.Join("", tokens.Select(x => x.Value)), 
                 @"((?=\[)|(?<=\[))|(?=\])|(?<=\])|(?=\.)|(?<=\.)|(?=\+)|(?<=\+)|(?=\-)|(?<=\-)|(?=\*)|(?<=\*)|(?=\/)|(?<=\/)|(?=\=)|(?<=\=)"
                 ).Where(x => x != "" && x != " ").ToArray();
 
             string name = parts[0];
-            Variable variable = variables.FirstOrDefault(x => x.Name == name);
+            Variable variable = Variables.FirstOrDefault(x => x.Name == name);
             if (variable == null) throw new Exception($"Variable '{name}' not found");
 
             object value = variable.Value;
@@ -337,7 +354,8 @@ namespace NormaLang
                     {
                         skip = 2;
 
-                        var index = int.Parse(parts[i + 1]);
+                        var lexertokens = Tokenizer(parts[i + 1])[0].Tokens;
+                        var index = int.Parse(GetValueFromTokens(lexertokens, true).ToString());
                         if (parts[i + 2] != "]") throw new Exception("Expected syntax 'varName[INDEX]'");
                         i += skip;
 
@@ -373,7 +391,7 @@ namespace NormaLang
                 }
             }
 
-            object set = GetValueFromTokens(tokens.Skip(skipToken + 1).ToArray(), variables, functions, defined, structs);
+            object set = GetValueFromTokens(tokens.Skip(skipToken + 1).ToArray());
 
             switch (tokens[skipToken].Value)
             {
@@ -431,7 +449,7 @@ namespace NormaLang
 
             variable.Value = value;
         }
-        internal static object? ExecuteDefinedFunction(Define def, Token[] tokens, IFunction[] functions, Variable[] variables, Define[] defined, Struct[] structs)
+        internal static object? ExecuteDefinedFunction(Define def, Token[] tokens)
         {
             Token[][] parameterTokens = new Token[def.Parameters.Length][];
             int paramsCount = 0;
@@ -452,21 +470,23 @@ namespace NormaLang
             object[] obj_parameters = new object[def.Parameters.Length];
             for (int i = 0; i < parameterTokens.Length; i++)
             {
-                obj_parameters[i] = GetValueFromTokens(parameterTokens[i], variables, functions, defined, structs);
+                obj_parameters[i] = GetValueFromTokens(parameterTokens[i]);
                 if (obj_parameters[i] == null)
                     throw new Exception($"Could not extract value from function parameter '{i + 1}'");
             }
             Variable[] parameters = obj_parameters.Select((x, y) => new Variable(def.Parameters[y].Name, x)).ToArray();
 
-            variables = variables.Concat(parameters).ToArray();
-            Execute(def.Lines, functions, variables, defined, structs);
+            Variable[] outsideOfFunc = Variables.Select(x => new Variable(x.Name, x.Value)).ToArray();
+
+            Variables = parameters;
+            Execute(def.Lines);
             object? val = Returning;
             Returning = null;
 
-            variables = variables.Where(x => !parameters.Any(y => y.Name == x.Name)).ToArray();
+            Variables = outsideOfFunc;
             return val;
         }
-        internal static object? ExecuteFunction(IFunction func, Token[] tokens, Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs)
+        internal static object? ExecuteFunction(IFunction func, Token[] tokens)
         {
             Token[][] parameterTokens = new Token[func.Params][];
             int paramsCount = 0;
@@ -487,13 +507,13 @@ namespace NormaLang
             object[] parameters = new object[func.Params];
             for (int i = 0; i < parameterTokens.Length; i++)
             {
-                parameters[i] = GetValueFromTokens(parameterTokens[i], variables, functions, defined, structs);
+                parameters[i] = GetValueFromTokens(parameterTokens[i]);
                 if (parameters[i] == null)
                     throw new Exception($"Could not extract value from function parameter '{i + 1}'");
             }
             return func.Execute(parameters);
         }
-        internal static object? GetValueFromTokens(Token[] tokens, Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs, bool getVariableFromIdentifier = false)
+        internal static object? GetValueFromTokens(Token[] tokens, bool getVariableFromIdentifier = false)
         {
             object? value = null; 
 
@@ -513,7 +533,7 @@ namespace NormaLang
                         object? val = tokens[i].Value;
                         if (tokens[i].Type == TokenType.Variable)
                         {
-                            val = GetValueFromTokens([tokens[i]], variables, functions, defined, structs, true);
+                            val = GetValueFromTokens([tokens[i]], true);
                             if (val == null)
                             {
                                 throw new Exception($"The variable '{val}' is not defined yet or doesn't exist");
@@ -548,14 +568,14 @@ namespace NormaLang
                             if (tokens[i].Type == TokenType.Variable)
                             {
                                 string[] parts = Regex.Split(tokens[i].Value, @"((?=\[)|(?<=\[))|(?=\])|(?<=\])|(?=\.)|(?<=\.)").Where(x => x != "" && x != " ").ToArray();
-                                if (variables.FirstOrDefault(x => x.Name == val.ToString()) is Variable var)
+                                if (Variables.FirstOrDefault(x => x.Name == val.ToString()) is Variable var)
                                 {
                                     ret = var.Value;
                                 }
                                 else if (parts[1] == "[" || parts[1] == ".")
                                 {
                                     string name = parts[0];
-                                    Variable variable = variables.FirstOrDefault(x => x.Name == name);
+                                    Variable variable = Variables.FirstOrDefault(x => x.Name == name);
                                     ret = variable.Value;
 
                                     for (int j = 1; j < parts.Length; j++)
@@ -568,7 +588,7 @@ namespace NormaLang
                                                 skip = 2;
 
                                                 var lexertokens = Tokenizer(parts[j + 1])[0].Tokens;
-                                                int index = int.Parse(GetValueFromTokens(lexertokens, variables, functions, defined, structs, true).ToString());
+                                                int index = int.Parse(GetValueFromTokens(lexertokens, true).ToString());
                                                 if (parts[j + 2] != "]") throw new Exception("Expected syntax 'varName[INDEX]'");
                                                 j += skip;
 
@@ -642,7 +662,7 @@ namespace NormaLang
                     else
                         throw new Exception("Cannot have value after variable value");
                 }
-                if (variables.FirstOrDefault(x => x.Name == tokens[0].Value) is Variable var)
+                if (Variables.FirstOrDefault(x => x.Name == tokens[0].Value) is Variable var)
                 {
                     if (var.Value is Variable v) value = v.Value;
                     else value = var.Value;
@@ -650,7 +670,7 @@ namespace NormaLang
                 else if (parts[1] == "[" || parts[1] == ".")
                 {
                     string name = parts[0];
-                    Variable variable = variables.FirstOrDefault(x => x.Name == name);
+                    Variable variable = Variables.FirstOrDefault(x => x.Name == name);
                     object val = variable.Value;
                     bool valIsString = false;
 
@@ -659,7 +679,7 @@ namespace NormaLang
                         if (parts[1] == "[")
                         {
                             var lexertokens = Tokenizer(parts[2])[0].Tokens;
-                            int index = int.Parse(GetValueFromTokens(lexertokens, variables, functions, defined, structs, true).ToString());
+                            int index = int.Parse(GetValueFromTokens(lexertokens, true).ToString());
                             if (parts.Length > 3)
                             {
                                 if (parts[3] == "]")
@@ -681,7 +701,7 @@ namespace NormaLang
                                 skip = 2;
 
                                 var lexertokens = Tokenizer(parts[i + 1])[0].Tokens;
-                                int index = int.Parse(GetValueFromTokens(lexertokens, variables, functions, defined, structs, true).ToString());
+                                int index = int.Parse(GetValueFromTokens(lexertokens, true).ToString());
                                 if (parts[i + 2] != "]") throw new Exception("Expected syntax 'varName[INDEX]'");
                                 i += skip;
 
@@ -726,26 +746,26 @@ namespace NormaLang
             }
             else if (tokens[0].Type == TokenType.Identifier)
             {
-                if (functions.FirstOrDefault(x => x.Name == tokens[0].Value) is IFunction func)
+                if (Functions.FirstOrDefault(x => x.Name == tokens[0].Value) is IFunction func)
                 {
                     if (func.Returns)
                     {
-                        value = ExecuteFunction(func, tokens, variables, functions, defined, structs);
+                        value = ExecuteFunction(func, tokens);
                     }
                     else
                     {
                         throw new Exception($"The Function '{func.Name}' does not return a value");
                     }
                 }
-                else if (defined.FirstOrDefault(x => x.Name == tokens[0].Value) is Define def)
+                else if (Defined.FirstOrDefault(x => x.Name == tokens[0].Value) is Define def)
                 {
-                    value = ExecuteDefinedFunction(def, tokens, functions, variables, defined, structs);
+                    value = ExecuteDefinedFunction(def, tokens);
                     if (value is null)
                     {
                         throw new Exception($"The Function '{def.Name}' did not return a value");
                     }
                 }
-                else if (structs.FirstOrDefault(x => x.Name == tokens[0].Value) is Struct struc)
+                else if (Structs.FirstOrDefault(x => x.Name == tokens[0].Value) is Struct struc)
                 {
                     if (tokens[1].Value == ":")
                     {
@@ -781,7 +801,7 @@ namespace NormaLang
                             }
                         }
 
-                        object[] propValues = propValuesTok.Select(x => GetValueFromTokens([x], variables, functions, defined, structs)).ToArray();
+                        object[] propValues = propValuesTok.Select(x => GetValueFromTokens([x])).ToArray();
 
                         ((IDictionary<string, object>)dyn)["__struct_name"] = struc.Name;
 
@@ -797,7 +817,7 @@ namespace NormaLang
                         throw new Exception($"Error in struct sytnax, expected ':' to call struct properties, '{struc.Name}': someValue, ...");
                     }
                 }
-                else if (getVariableFromIdentifier && tokens.Length == 1 && variables.FirstOrDefault(x => x.Name == tokens[0].Value) is Variable var)
+                else if (getVariableFromIdentifier && tokens.Length == 1 && Variables.FirstOrDefault(x => x.Name == tokens[0].Value) is Variable var)
                 {
                     value = var.Value;
                 }
@@ -810,12 +830,13 @@ namespace NormaLang
             {
                 if (tokens[0].Value == "true") value = true;
                 else if (tokens[0].Value == "false") value = false;
+                else if (tokens[0].Value == "none") value = "";
                 else if (tokens[0].Value == "point")
                 {
                     if (tokens[1].Value == ":" && tokens.Length == 3)
                     {
                         string name = tokens[2].Value;
-                        Variable variable = variables.FirstOrDefault(x => x.Name == name);
+                        Variable variable = Variables.FirstOrDefault(x => x.Name == name);
                         if (variable == null) throw new Exception($"Variable '{name}' does not exist");
                         value = variable;
                     }
@@ -830,7 +851,7 @@ namespace NormaLang
             {
                 string[] parts = tokens[0].Value.ToCharArray().Select(x => x.ToString()).ToArray();
                 object[] values = ParseArrayFromString(parts, 0, out _);
-                values = GetArrayValues(values, variables, functions, defined, structs);
+                values = GetArrayValues(values);
                 value = values;
             }
             else
@@ -851,13 +872,13 @@ namespace NormaLang
             }
             return text + "]";
         }
-        internal static object[] GetArrayValues(object[] values, Variable[] variables, IFunction[] functions, Define[] defined, Struct[] structs)
+        internal static object[] GetArrayValues(object[] values)
         {
             for (int i = 0; i < values.Length; i++)
             {
                 if (values[i] is object[])
                 {
-                    values[i] = GetArrayValues(values[i] as object[], variables, functions, defined, structs);
+                    values[i] = GetArrayValues(values[i] as object[]);
                 }
                 else if (values[i].ToString().StartsWith("point:"))
                 {
@@ -867,7 +888,7 @@ namespace NormaLang
                         throw new Exception("Incorrect pointer syntax, expected 'point:$varName$'");
                     }
                     string name = split[1].Remove(split[1].Length - 1, 1).Remove(0, 1);
-                    Variable variable = variables.FirstOrDefault(x => x.Name == name);
+                    Variable variable = Variables.FirstOrDefault(x => x.Name == name);
                     if (variable == null)
                     {
                         throw new Exception($"The variable '{name}' does not exist");
@@ -877,7 +898,7 @@ namespace NormaLang
                 else
                 {
                     var lexertokens = Tokenizer(values[i].ToString())[0].Tokens;
-                    values[i] = GetValueFromTokens(lexertokens, variables, functions, defined, structs);
+                    values[i] = GetValueFromTokens(lexertokens);
                     if (values[i] is ExpandoObject expando)
                     {
                         var newExpando = new ExpandoObject();

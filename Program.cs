@@ -7,13 +7,13 @@ namespace NormaLang
     {
         public static void Main(string[] args)
         {
-            if (args.Length == 0)
+            if (args.Length == 0 && false)
             {
                 Console.WriteLine("No file specified. Please use 'Open with' in the file explorer or pass the file as an argument in the command prompt to run this file.");
                 return;
             }
 
-            string filePath = args[0];
+            string filePath = "D:\\Norma\\Bear Bootstrap\\Main.norm";
             string contents = "";
 
             if (!File.Exists(filePath))
@@ -34,9 +34,7 @@ namespace NormaLang
             //System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
             var code = contents;
-            var lexerLines = Lexer.Tokenizer(code);
-            var parserLines = Parser.Parse(lexerLines);
-            Execution.Execute(parserLines);
+            Interprete.RunCode(code, filePath);
 
             // To time how fast Norm is
             //Console.WriteLine("------------------\nMiliseconds: " + sw.ElapsedMilliseconds.ToString());

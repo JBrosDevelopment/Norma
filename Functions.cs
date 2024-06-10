@@ -31,6 +31,9 @@ namespace NormaLang
             new FWriteFile(),
             new FCreateFile(),
             new FDeleteFile(),
+            new FEnvPath(),
+            new FEnvDir(),
+            new FIntToChar(),
             // stirng:
             new FSubstring(),
             new FIndexOf(),
@@ -132,9 +135,7 @@ namespace NormaLang
         {
             var code = IFunction.ValueToString(args[0]);
 
-            var lexerLines = Lexer.Tokenizer(code);
-            var parserLines = Parser.Parse(lexerLines);
-            Execution.Execute(parserLines);
+            Interprete.RunCode(code, Interprete.FilePath);
 
             return null;
         }
@@ -185,6 +186,37 @@ namespace NormaLang
             var file = IFunction.ValueToString(args[0]);
             File.Delete(file);
             return null;
+        }
+    }
+    public class FEnvPath : IFunction
+    {
+        public string Name { get; } = "envPath";
+        public int Params { get; } = 0;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            return Interprete.FilePath;
+        }
+    }
+    public class FEnvDir : IFunction
+    {
+        public string Name { get; } = "envDir";
+        public int Params { get; } = 0;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            return Directory.GetParent(Interprete.FilePath).FullName;
+        }
+    }
+    public class FIntToChar : IFunction
+    {
+        public string Name { get; } = "intToChar";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            string hex = IFunction.ValueToString(args[0]);
+            return (char)Convert.ToInt32(hex, 16);
         }
     }
     #endregion

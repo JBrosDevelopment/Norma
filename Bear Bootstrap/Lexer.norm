@@ -1,0 +1,448 @@
+struct Token { Value, Type } // Types: Identifier, Reserved, Symbol, Variable, Number, String, Array
+struct Line { Tokens, Number, Statement, Defined, Struct }
+
+var ReservedKeywrods = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none"]
+
+def isWhiteSpace: ch {
+    var ret = false
+    if $ch$ = " " { ret = true }
+    elif $ch$ = "" { ret = true }
+    return $ret$
+}
+def isNum: ch {
+    var ret = false
+    if $ch$ = "0" { ret = true }
+    elif $ch$ = "1" { ret = true }
+    elif $ch$ = "2" { ret = true }
+    elif $ch$ = "3" { ret = true }
+    elif $ch$ = "4" { ret = true }
+    elif $ch$ = "5" { ret = true }
+    elif $ch$ = "6" { ret = true }
+    elif $ch$ = "7" { ret = true }
+    elif $ch$ = "8" { ret = true }
+    elif $ch$ = "9" { ret = true }
+    elif $ch$ = "." { ret = true }
+    return $ret$
+}
+def isSymbol: ch {
+    var ret = false
+    if $ch$ = "=" { ret = true }
+    elif $ch$ = ">" { ret = true }
+    elif $ch$ = "<" { ret = true }
+    elif $ch$ = "!" { ret = true }
+    elif $ch$ = "+" { ret = true }
+    elif $ch$ = "-" { ret = true }
+    elif $ch$ = "*" { ret = true }
+    elif $ch$ = "/" { ret = true }
+    elif $ch$ = "\$" { ret = true }
+    elif $ch$ = "\"" { ret = true }
+    elif $ch$ = "," { ret = true }
+    elif $ch$ = "(" { ret = true }
+    elif $ch$ = ")" { ret = true }
+    elif $ch$ = "{" { ret = true }
+    elif $ch$ = "}" { ret = true }
+    elif $ch$ = "[" { ret = true }
+    elif $ch$ = "]" { ret = true }
+    elif $ch$ = ":" { ret = true }
+    elif $ch$ = "." { ret = true }
+    return $ret$
+}
+def isAlpha: ch {
+    var ret = true
+    if isNum $ch$ { ret = false }
+    elif isWhiteSpace $ch$ { ret = false }
+    elif isSymbol $ch$ { ret = false }
+    return $ret$
+}
+
+def Tokenize: code {
+    var lines = split $code$, "\n"
+    for i in length $lines$ {
+        lines[i] = trim $lines[i]$
+    }
+    
+    var lexerLines = []
+    var blockComment = false
+    var blockCommentNumber = 0
+
+    for i in length $lines$ {
+        var chars = toCharArray $lines[i]$
+        var charsLen = length $chars$
+        var tokens = []
+        var lineNumber = $i$
+        var break = false
+
+        // bools:
+        var isQuotation = false
+        var isNumber = false
+        var isVariable = false
+        var isIdentifier = false
+        var isSymbolChar = false
+        var tempWasQuote = false
+        var isArray = false
+        var escapeChar = false
+        // strings:
+        var number = none
+        var quote = none
+        var variable = none
+        var identifier = none
+        var array = none
+        var symbol = ""
+        // int:
+        var start = 0
+        var arrayCount = 0
+
+        for j in $charsLen$ {
+            if $break$ = false {
+                var c = $chars[j]$
+                var continue = false
+
+                if $escapeChar$ = true {
+                    if isQuotation = false {
+                        print "Tried using escape char '\\' outside of string in line $lineNumber$"
+                    }
+                    escapeChar = false
+
+                    continue = true
+                    if $c$ = "n" { quote = "\n" }
+                    elif $c$ = "t" { quote = "\t" }
+                    elif $c$ = "r" { quote = "\r" }
+                    elif $c$ = "\\" { quote = "\\" }
+                    elif $c$ = "\"" { quote = "\"" }
+                    elif $c$ = "\'" { quote = "\'" }
+                    elif $c$ = "0" { quote = "\0" }
+                    elif $c$ = "a" { quote = "\a" }
+                    elif $c$ = "b" { quote = "\b" }
+                    elif $c$ = "f" { quote = "\f" }
+                    elif $c$ = "v" { quote = "\v" }
+                    elif $c$ = "u" {
+                        if ($j$ + 4) < $charsLen$ {
+                            var hex = slice $chars$, ($j$ + 1), 4
+                            quote += intToChar $hex$
+                            j + 4
+                        }
+                        else {
+                            print "Invalid Unicode escape sequence in line $lineNumber$"
+                        }
+                    }
+                    else { print "Unknown escape character: \\$c$ in line $lineNumber$" }
+                }
+                if $charsLen$ > ($j$ + 1) {
+                    if $c$ = "\\" {
+                        if $isQuotation$ = false {
+                            print "Tried using escape char '\\' outside of string in line $lineNumber$"
+                        }
+                        else {
+                            escapeChar = true
+                            continue = true
+                        }
+                    }
+                }
+                if $continue$ = false {
+                    var jPlus1 = ($j$ + 1)
+                    if $charsLen$ > ($j$ + 1) {
+                        if $c$ = "/" {
+                            if $chars[jPlus1]$ == "*" { 
+                                blockComment = true 
+                            }
+                        }
+                        if $c$ = "*" {
+                            if $chars[jPlus1]$ == "/" {
+                                blockComment = false
+                                blockCommentNumber = 2
+                            }
+                        }
+                    }
+
+                    if $blockComment$ = false { blockCommentNumber - 1 }
+                    if $blockComment$ = true {
+                        if $blockCommentNumber$ >= 0 {
+                            continue = true
+                        }
+                    }
+                    if $charsLen$ > ($j$ + 1) {
+                        if $c$ = "/" {
+                            if $chars[jPlus1]$ = "/" {
+                                break = true
+                            }
+                        }
+                    }
+
+                    if $continue$ = false {
+                        
+                        var happened = false
+
+                        if $isArray$ {
+                            if $c$ != "[" {
+                                if $c$ != "]" {
+                                    if $isIdentifier$ = false {
+                                        if $isQuotation$ = false {
+                                            array + $c$
+                                            happened = true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if $happened$ = false {
+                            if isWhiteSpace $c$ {
+                                if $isQuotation$ = false {
+                                    if $isArray$ = false {
+                                        if $isVariable$ = true { print "Can not have whitespace in between '\$' in line $lineNumber$" }
+                                        isNumber = false
+                                        isIdentifier = false
+                                        happened = true
+                                    }
+                                }
+                            }
+                        }
+                        if $happened$ = false {
+                            if isNum $c$ {
+                                if $isVariable$ = false {
+                                    if $isQuotation$ = false {
+                                        if $isIdentifier$ = false {
+                                            if $isArray$ = false {
+                                                start = $j$
+                                                isNumber = true
+                                                number + $c$
+                                                happened = true
+                                            }
+                                        }   
+                                    }
+                                }
+                            }
+                        }
+                        if $happened$ = false {
+                            happened = true
+                            if isSymbol $c$ {
+                                var symbHappened = false
+                                if $isVariable$ = false {
+                                    if $isQuotation$ = false {
+                                        if $isIdentifier$ = false {
+                                            if $c$ = "[" {
+                                                arrayCount + 1
+                                                if $start$ = -1 { start = $j$ }
+                                                isArray = true
+                                                array + $c$
+                                                var symbHappened = true
+                                            }
+                                            if $c$ = "]" {
+                                                arrayCount - 1
+                                                isArray = false
+                                                if $arrayCount$ != 0 { isArray = true }
+                                                array + $c$
+                                                var symbHappened = true
+                                            }
+                                        }
+                                    }
+                                }
+                                if $c$ = "." {
+                                    if $charsLen$ > ($j$ + 1) {
+                                        if isNum $chars[jPlus1]$ {
+                                            start = $j$
+                                            isNumber = true
+                                            number + $c$
+                                            var symbHappened = true
+                                        }
+                                    }
+                                }
+                                if $c$ = "\"" {
+                                    var isq = false
+                                    if $isQuotation$ = false { isq = true }
+                                    isQuotation = $isq$
+                                    if $start$ = -1 { start = $j$ }
+                                    if $quote$ = none { quote = "" }
+                                    var symbHappened = true
+                                }
+                                if $c$ = "\$" {
+                                    tempWasQuote = false
+                                    if $isQuotation$ = true {
+                                        tempWasQuote = true
+                                    }
+                                    if $isQuotation$ = false {
+                                        if $isVariable$ = $tempWasQuote$ {
+                                            tempWasQuote = true
+                                        }
+                                    }
+                                    var isq = false
+                                    if $isQuotation$ = false { isq = true }
+                                    var ist = false
+                                    if $isq$ = $tempWasQuote$ { ist = true }
+                                    isQuotation = $ist$
+                                    isq = false
+                                    if $isVariable$ = false { isq = true }
+                                    isVariable = $isq$
+                                    if $start$ = -1 { start = $j$ }
+                                    var symbHappened = true
+                                }
+                                if $symbHappened$ = false {
+                                    if $isVariable$ = false {
+                                        if $isQuotation$ = false {
+                                            symbol + $c$
+                                            start = $j$
+
+                                            if $charsLen$ > ($j$ + 1) {
+                                                if $chars[jPlus1]$ == "=" {
+                                                    if $c$ = ">" {
+                                                        j + 1
+                                                        symbol = ">="
+                                                    }
+                                                    if $c$ = "<" {
+                                                        j + 1
+                                                        symbol = "<="
+                                                    }
+                                                    if $c$ = "!" {
+                                                        j + 1
+                                                        symbol = "!="
+                                                    }
+                                                }
+                                            }
+
+                                            isSymbolChar = true
+                                            isNumber = true
+                                            isVariable = true
+                                            isIdentifier = true
+                                        }
+                                    }
+                                    if $isQuotation$ = true {
+                                        quote + $c$
+                                    }
+                                    if $isVariable$ = true {
+                                        variable + $c$
+                                    }
+                                }
+                            }
+                        }
+                        if $happened$ = false {
+                            happened = true
+                            if $isQuotation$ = true {
+                                quote + $c$
+                            }
+                            if $isVariable$ = true {
+                                variable + $c$
+                            }
+                        }
+                        if $happened$ = false {
+                            happened = true
+                            var or = false
+                            if isAlpha $c$ {
+                                or = true
+                            }
+                            if $isIdentifier$ = true {
+                                or = true
+                            }
+                            if $or$ {
+                                if $start$ = -1 { start = $j$ }
+                                identifier + $c$
+                                isIdentifier = true
+                            }
+                        }
+                        if $happened$ = false {
+                            print "Character '$c$' is not valid in line $lineNumber$"
+                        }
+
+                        // assign tokens
+                        if $isNumber$ = false {
+                            if $number$ != none {
+                                var tok = Token: $number$, "Number"
+                                tokens = append $tokens$, $tok$
+                                number = none
+                                start = -1
+                            }
+                        }
+                        if $isVariable$ = false {
+                            if $variable$ != none {
+                                var tok = Token: $variable$, "Variable"
+                                tokens = append $tokens$, $tok$
+                                variable = none
+                                start = -1
+                            }
+                        }
+                        if $isQuotatione$ = false {
+                            if $quote$ != none {
+                                var tok = Token: $quote$, "String"
+                                tokens = append $tokens$, $tok$
+                                quote = none
+                                start = -1
+                            }
+                        }
+                        if $isIdentifier$ = false {
+                            if $identifier$ != none {
+                                var tokType = "Identifier"
+                                if contains $ReservedKeywrods$, $identifier$ {
+                                    tokType = "Reserved"
+                                }
+                                var tok = Token: $identifier$, $tokType$
+                                tokens = append $tokens$, $tok$
+                                identifier = none
+                                start = -1
+                            }
+                        }
+                        if $isSymbolChar$ = true {
+                            var tok = Token: $symbol$, "Symbol"
+                            tokens = append $tokens$, $tok$
+                            isSymbolChar = false;
+                            symbol = "";
+                            start = -1;
+                        }
+                        if $isArray$ = false {
+                            if $array$ != none {
+                                var tok = Token: $quote$, "Array"
+                                tokens = append $tokens$, $tok$
+                                array = none
+                                start = -1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // assign tokens
+        if $isNumber$ = false {
+            var tok = Token: $number$, "Number"
+            tokens = append $tokens$, $tok$
+            number = none
+            start = -1
+        }
+        if $isVariable$ = false {
+            var tok = Token: $variable$, "Variable"
+            tokens = append $tokens$, $tok$
+            variable = none
+            start = -1
+        }
+        if $isQuotation$ = false {
+            var tok = Token: $quote$, "String"
+            tokens = append $tokens$, $tok$
+            quote = none
+            start = -1
+        }
+        if $isIdentifier$ = false {
+            var tokType = "Identifier"
+            if contains $ReservedKeywrods$, $identifier$ {
+                tokType = "Reserved"
+            }
+            var tok = Token: $identifier$, $tokType$
+            tokens = append $tokens$, $tok$
+            identifier = none
+            start = -1
+        }
+        if $isSymbolChar$ = true {
+            var tok = Token: $symbol$, "Symbol"
+            tokens = append $tokens$, $tok$
+            isSymbolChar = false;
+            symbol = "";
+            start = -1;
+        }
+        if $isArray$ = false {
+            var tok = Token: $quote$, "Array"
+            tokens = append $tokens$, $tok$
+            array = none
+            start = -1
+        }
+
+        var ln = ($i$ + 1)
+        var line = Line: $tokens$, $ln$, none, none, none
+        lexerLines = append $lexerLines$, $line$
+    }
+    return $lexerLines$
+}

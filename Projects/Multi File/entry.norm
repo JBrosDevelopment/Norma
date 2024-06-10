@@ -1,0 +1,13 @@
+// Add Structs:
+var file3 = readFile "D:/Norma/Multi File/structs.norm"
+runCode $file3$
+// Add variables:
+var file2 = readFile "D:/Norma/Multi File/variables.norm"
+runCode $file2$
+// Add Functions:
+var file1 = readFile "D:/Norma/Multi File/defining.norm"
+runCode $file1$
+
+// Start Code:
+
+print "Hello World!"

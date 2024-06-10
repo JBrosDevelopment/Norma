@@ -24,11 +24,15 @@ namespace NormaLang
             // Evaluate input and return bool as output
             
             // Convert string to number
-            var allchars = input.Replace("and", "&").Replace("or", "|").Replace("not", "!").ToCharArray();
+            var allchars = input.Replace("!=", "`").ToCharArray();
             string output = "";
-            for (int i = 0; i < input.Length; i++)
+            for (int i = 0; i < allchars.Length; i++)
             {
-                if (isAlpha(allchars[i]))
+                if (allchars[i] == '`')
+                {
+                    output += "<>";
+                }
+                else if (isAlpha(allchars[i]))
                 {
                     output += ((int)allchars[i]).ToString();
                 }
@@ -39,7 +43,7 @@ namespace NormaLang
             }
             
             // Evaluate Number
-            string expression = output.Replace("!", "<>").Replace("||", "or").Replace("&&", "and").Replace("&", "and").Replace("|", "or");
+            string expression = output;
             DataTable table = new DataTable();
             table.Columns.Add("expression", typeof(bool));
 

@@ -1,0 +1,11 @@
+var n = 1 
+var array = [0, 1]
+
+for i in 25 {
+    var len = length $array$
+    var index = ($len$ - 2)
+    n + $array[index]$
+    array = append $array$, $n$
+}
+
+print $array$

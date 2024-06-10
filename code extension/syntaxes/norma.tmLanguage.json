@@ -22,7 +22,7 @@
 		},
 		{
 			"name": "keyword.other.norma",
-			"match": "\\b(var|def|struct|new|true|false)\\b"
+			"match": "\\b(var|def|struct|new|true|false|none)\\b"
 		},
 		{
 			"name": "support.function.norma",
@@ -68,7 +68,7 @@
 		},
 		{
 			"name": "variable-assignment.norma",
-			"match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b\\s*(?=[+\\-*/\\=\\.in])",
+			"match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b\\s*(?=[+\\-*/\\=\\.in\\[\\]])",
 			"captures": {
 				"1": {
 					"name": "variable.norma"

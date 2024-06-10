@@ -44,7 +44,7 @@ namespace NormaLang
                 Struct = @struct;
             }
         }
-        internal static string[] ReservedKeywrods = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point"];
+        internal static string[] ReservedKeywrods = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none"];
         /*
          * This is the Lexer part of the interpreter. It takes a string and outputs lines of code that contain tokens
          */
@@ -67,7 +67,8 @@ namespace NormaLang
                     isIdentifier = false,
                     isSymbolChar = false,
                     tempWasQuote = false,
-                    isArray = false;
+                    isArray = false,
+                    escapeChar = false;
                 string?
                     number = null,
                     quote = null,
@@ -78,10 +79,64 @@ namespace NormaLang
                 int? 
                     start = 0,
                     arrayCount = 0;
-
+                
                 for (int j = 0; j < chars.Length; j++)
                 {
                     char c = chars[j];
+                    if (escapeChar)
+                    {
+                        if (!isQuotation)
+                        {
+                            throw new Exception("Tried using escape char '\\' outside of string in line " + (i + 1));
+                        }
+
+                        escapeChar = false;
+                        switch (c)
+                        {
+                            case 'n': quote += '\n'; continue;
+                            case 't': quote += '\t'; continue;
+                            case 'r': quote += '\r'; continue;
+                            case '\\': quote += '\\'; continue;
+                            case '$': quote += '$'; continue;
+                            case '\"': quote += '\"'; continue;
+                            case '\'': quote += '\''; continue;
+                            case '0': quote += '\0'; continue;
+                            case 'a': quote += '\a'; continue;
+                            case 'b': quote += '\b'; continue;
+                            case 'f': quote += '\f'; continue;
+                            case 'v': quote += '\v'; continue;
+                            case 'u':
+                                // Expect 4 hex digits for Unicode escape sequence
+                                if (j + 4 < chars.Length)
+                                {
+                                    try
+                                    {
+                                        string hex = new string(chars, j + 1, 4);
+                                        quote += (char)Convert.ToInt32(hex, 16);
+                                        j += 4; // Skip the next 4 hex digits
+                                    }
+                                    catch
+                                    { 
+                                        throw new Exception("Invalid Unicode escape sequence in line " + (i + 1)); 
+                                    }
+                                }
+                                else
+                                {
+                                    throw new Exception("Invalid Unicode escape sequence in line " + (i + 1));
+                                }
+                            continue;
+                            default: throw new Exception("Unknown escape character: \\" + c + " in line " + (i + 1));
+                        }
+                    }
+                    if (chars.Length > j + 1 && c == '\\')
+                    {
+                        if (!isQuotation)
+                        {
+                            throw new Exception("Tried using escape char '\\' outside of string in line " + (i + 1));
+                        }
+                        escapeChar = true;
+                        continue;
+                    }
 
                     if (chars.Length > j + 1 && c == '/' && chars[j + 1] == '*')
                     {
@@ -105,7 +160,7 @@ namespace NormaLang
                     {
                         array += c;
                     }
-                    else if(isWhiteSpace(c) && !isQuotation && !isArray)
+                    else if (isWhiteSpace(c) && !isQuotation && !isArray)
                     {
                         isNumber = false;
                         if (isVariable) throw new Exception("Can not have whitespace in between '$' in line " + (i + 1)); // added 1 to 'i' to remove line '0' from occuring
