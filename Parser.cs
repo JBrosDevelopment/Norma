@@ -5,7 +5,7 @@ namespace NormaLang
     public class Parser
     {
         /*
-         * The parser will find any if/else/while statements.
+         * The parser will find all statements, structs, and defined functions.
          */
         public static Line[] Parse(Line[] lines)
         {
@@ -18,7 +18,7 @@ namespace NormaLang
 
                 if (tokens.Length > 0 && tokens[0].Type == TokenType.Reserved)
                 {
-                    line = ReturnLineWithReservedToken(tokens, ref lines, ref i);
+                    line = ReturnLineWithReservedToken(tokens, lines, ref i);
                 }
                 if (tokens.Length != 0)
                 {
@@ -28,26 +28,26 @@ namespace NormaLang
 
             return parserLines;
         }
-        internal static Line ReturnLineWithReservedToken(Token[] tokens, ref Line[] lines, ref int i)
+        internal static Line ReturnLineWithReservedToken(Token[] tokens, Line[] lines, ref int i)
         {
             if (Statement.StatementTypes.Any(x => x == tokens[0].Value))
             {
-                return ReturnStatement(tokens, ref lines, ref i);
+                return ReturnStatement(tokens, lines, ref i);
             }
             else if (tokens[0].Value == "def")
             {
-                return ReturnDefine(tokens, ref lines, ref i);
+                return ReturnDefine(tokens, lines, ref i);
             }
             else if (tokens[0].Value == "struct")
             {
-                return ReturnStruct(tokens, ref lines, ref i);
+                return ReturnStruct(tokens, lines, ref i);
             }
             else
             {
                 return lines[i];
             }
         }
-        internal static Line ReturnStatement(Token[] tokens, ref Line[] lines, ref int i)
+        internal static Line ReturnStatement(Token[] tokens, Line[] lines, ref int i)
         {
             Line[] statementLines = [];
 
@@ -59,14 +59,14 @@ namespace NormaLang
                 Statement.StatementType.While;
 
             Token[] tokenInput = statementType != Statement.StatementType.Else ?
-                tokens.Skip(1).TakeWhile(x => x.Value != "{").ToArray() : [];
+                tokens.Skip(1).TakeWhile(x => !(x.Type == TokenType.Symbol && x.Value == "{")).ToArray() : [];
 
-            statementLines = GetLinesInBrackets(tokens, ref lines, ref i);
+            statementLines = GetLinesInBrackets(tokens, lines, ref i);
 
             Statement statement = new Statement(tokenInput, statementLines, statementType);
             return new Line(lines[i].Number, [], statement: statement);
         }
-        internal static Line ReturnDefine(Token[] tokens, ref Line[] lines, ref int i)
+        internal static Line ReturnDefine(Token[] tokens, Line[] lines, ref int i)
         {
             Line line = lines[i];
             string name = tokens[1].Value;
@@ -81,18 +81,18 @@ namespace NormaLang
                 parameters = parameterParts.Select(x => new Variable(x, null)).ToArray();
             }
 
-            defLines = GetLinesInBrackets(tokens, ref lines, ref i);
+            defLines = GetLinesInBrackets(tokens, lines, ref i);
 
             Define def = new Define(name, defLines, parameters);
             return new Line(line.Number, [], define: def);
         }
-        internal static Line ReturnStruct(Token[] tokens, ref Line[] lines, ref int i)
+        internal static Line ReturnStruct(Token[] tokens, Line[] lines, ref int i)
         {
             string name = tokens[1].Value;
             Line[] structLines = [];
             string[] properties = [];
 
-            structLines = GetLinesInBrackets(tokens, ref lines, ref i);
+            structLines = GetLinesInBrackets(tokens, lines, ref i);
 
             Token[] tokenAr = [];
             structLines.Select(x =>
@@ -134,7 +134,7 @@ namespace NormaLang
             Struct struc = new Struct(name, properties);
             return new Line(lines[i].Number, [], @struct: struc);
         }
-        internal static Line[] GetLinesInBrackets(Token[] tokens, ref Line[] lines, ref int i)
+        internal static Line[] GetLinesInBrackets(Token[] tokens, Line[] lines, ref int i)
         {
             Line[] returnLines = [];
             Line line = lines[i];
@@ -144,7 +144,7 @@ namespace NormaLang
 
             if (openbracketOnSameLine && closebracketOnSameLine)
             {
-                var tokensInBrackets = tokens.SkipWhile(x => x.Value != "{").TakeWhile(x => x.Value != "}").Skip(1).ToArray();
+                var tokensInBrackets = tokens.SkipWhile(x => !(x.Type == TokenType.Symbol && x.Value == "{")).TakeWhile(x => !(x.Type == TokenType.Symbol && x.Value == "}")).Skip(1).ToArray();
                 returnLines = [new Line(line.Number, tokensInBrackets)];
             }
             else if (!openbracketOnSameLine && closebracketOnSameLine)
@@ -157,10 +157,10 @@ namespace NormaLang
                 if (openbracketOnSameLine)
                 {
                     startIndex = i + 1;
-                    var tokensInBrackets = tokens.SkipWhile(x => x.Value != "{").Skip(1).ToArray();
+                    var tokensInBrackets = tokens.SkipWhile(x => !(x.Type == TokenType.Symbol && x.Value == "{")).Skip(1).ToArray();
                     if (tokensInBrackets.Length != 0)
                     {
-                        returnLines = [new Line(line.Number, tokensInBrackets)];
+                        throw new Exception("Expected closing bracket on same line if there is code after '{'");
                     }
                 }
                 else if (lines[startIndex].Tokens.Length > 0 && lines[startIndex].Tokens[0].Type != TokenType.Symbol && lines[startIndex].Tokens[0].Value == "{")
@@ -174,13 +174,13 @@ namespace NormaLang
 
                     if (l.Tokens.Length > 0 && l.Tokens[0].Type is TokenType.Reserved)
                     {
-                        l = ReturnLineWithReservedToken(l.Tokens, ref lines, ref i);
+                        l = ReturnLineWithReservedToken(l.Tokens, lines, ref i);
                     }
                     if (l.Tokens.Any(x => x.Type == TokenType.Symbol && x.Value == "{")) bracketCount++;
                     if (l.Tokens.Any(x => x.Type == TokenType.Symbol && x.Value == "}"))
                     {
                         bracketCount--;
-                        if (bracketCount == 0 && l.Tokens.LastOrDefault().Value == "}" && l.Tokens.Length > 1)
+                        if (bracketCount == 0 && l.Tokens.LastOrDefault().Value == "}" && l.Tokens.LastOrDefault().Type == TokenType.Symbol && l.Tokens.Length > 1)
                         {
                             l.Tokens = l.Tokens.Take(l.Tokens.Length - 1).ToArray();
                         }

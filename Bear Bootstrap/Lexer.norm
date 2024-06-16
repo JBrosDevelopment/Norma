@@ -1,7 +1,5 @@
 struct Token { Value, Type } // Types: Identifier, Reserved, Symbol, Variable, Number, String, Array
-struct Line { Tokens, Number, Statement, Defined, Struct }
-
-var ReservedKeywrods = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none"]
+struct Line { Tokens, LineNumber, Statement, Defined, Struct }
 
 def isWhiteSpace: ch {
     var ret = false
@@ -56,6 +54,7 @@ def isAlpha: ch {
 }
 
 def Tokenize: code {
+    var ReservedKeywords = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none"]
     var lines = split $code$, "\n"
     for i in length $lines$ {
         lines[i] = trim $lines[i]$
@@ -89,35 +88,36 @@ def Tokenize: code {
         var array = none
         var symbol = ""
         // int:
-        var start = 0
         var arrayCount = 0
 
         for j in $charsLen$ {
             if $break$ = false {
                 var c = $chars[j]$
                 var continue = false
+                var jPlus1 = ($j$ + 1)
+                var happened = false
 
                 if $escapeChar$ = true {
-                    if isQuotation = false {
+                    if $isQuotation$ = false {
                         print "Tried using escape char '\\' outside of string in line $lineNumber$"
                     }
                     escapeChar = false
 
                     continue = true
-                    if $c$ = "n" { quote = "\n" }
-                    elif $c$ = "t" { quote = "\t" }
-                    elif $c$ = "r" { quote = "\r" }
-                    elif $c$ = "\\" { quote = "\\" }
-                    elif $c$ = "\"" { quote = "\"" }
-                    elif $c$ = "\'" { quote = "\'" }
-                    elif $c$ = "0" { quote = "\0" }
-                    elif $c$ = "a" { quote = "\a" }
-                    elif $c$ = "b" { quote = "\b" }
-                    elif $c$ = "f" { quote = "\f" }
-                    elif $c$ = "v" { quote = "\v" }
+                    if $c$ = "n" { quote + "\n" }
+                    elif $c$ = "t" { quote + "\t" }
+                    elif $c$ = "r" { quote + "\r" }
+                    elif $c$ = "\\" { quote + "\\" }
+                    elif $c$ = "\"" { quote + "\"" }
+                    elif $c$ = "\'" { quote + "\'" }
+                    elif $c$ = "0" { quote + "\0" }
+                    elif $c$ = "a" { quote + "\a" }
+                    elif $c$ = "b" { quote + "\b" }
+                    elif $c$ = "f" { quote + "\f" }
+                    elif $c$ = "v" { quote + "\v" }
                     elif $c$ = "u" {
                         if ($j$ + 4) < $charsLen$ {
-                            var hex = slice $chars$, ($j$ + 1), 4
+                            var hex = slice $chars$, $jPlus1$, 4
                             quote += intToChar $hex$
                             j + 4
                         }
@@ -127,7 +127,7 @@ def Tokenize: code {
                     }
                     else { print "Unknown escape character: \\$c$ in line $lineNumber$" }
                 }
-                if $charsLen$ > ($j$ + 1) {
+                if $charsLen$ > $jPlus1$ {
                     if $c$ = "\\" {
                         if $isQuotation$ = false {
                             print "Tried using escape char '\\' outside of string in line $lineNumber$"
@@ -139,8 +139,7 @@ def Tokenize: code {
                     }
                 }
                 if $continue$ = false {
-                    var jPlus1 = ($j$ + 1)
-                    if $charsLen$ > ($j$ + 1) {
+                    if $charsLen$ > $jPlus1$ {
                         if $c$ = "/" {
                             if $chars[jPlus1]$ == "*" { 
                                 blockComment = true 
@@ -160,19 +159,18 @@ def Tokenize: code {
                             continue = true
                         }
                     }
-                    if $charsLen$ > ($j$ + 1) {
+                    if $charsLen$ > $jPlus1$ {
                         if $c$ = "/" {
                             if $chars[jPlus1]$ = "/" {
                                 break = true
+                                continue = true
                             }
                         }
                     }
 
                     if $continue$ = false {
-                        
-                        var happened = false
 
-                        if $isArray$ {
+                        if $isArray$ = true {
                             if $c$ != "[" {
                                 if $c$ != "]" {
                                     if $isIdentifier$ = false {
@@ -202,7 +200,6 @@ def Tokenize: code {
                                     if $isQuotation$ = false {
                                         if $isIdentifier$ = false {
                                             if $isArray$ = false {
-                                                start = $j$
                                                 isNumber = true
                                                 number + $c$
                                                 happened = true
@@ -213,15 +210,14 @@ def Tokenize: code {
                             }
                         }
                         if $happened$ = false {
-                            happened = true
                             if isSymbol $c$ {
+                                happened = true
                                 var symbHappened = false
                                 if $isVariable$ = false {
                                     if $isQuotation$ = false {
                                         if $isIdentifier$ = false {
                                             if $c$ = "[" {
                                                 arrayCount + 1
-                                                if $start$ = -1 { start = $j$ }
                                                 isArray = true
                                                 array + $c$
                                                 var symbHappened = true
@@ -237,9 +233,8 @@ def Tokenize: code {
                                     }
                                 }
                                 if $c$ = "." {
-                                    if $charsLen$ > ($j$ + 1) {
+                                    if $charsLen$ > $jPlus1$ {
                                         if isNum $chars[jPlus1]$ {
-                                            start = $j$
                                             isNumber = true
                                             number + $c$
                                             var symbHappened = true
@@ -250,7 +245,6 @@ def Tokenize: code {
                                     var isq = false
                                     if $isQuotation$ = false { isq = true }
                                     isQuotation = $isq$
-                                    if $start$ = -1 { start = $j$ }
                                     if $quote$ = none { quote = "" }
                                     var symbHappened = true
                                 }
@@ -272,17 +266,15 @@ def Tokenize: code {
                                     isq = false
                                     if $isVariable$ = false { isq = true }
                                     isVariable = $isq$
-                                    if $start$ = -1 { start = $j$ }
                                     var symbHappened = true
                                 }
                                 if $symbHappened$ = false {
                                     if $isVariable$ = false {
                                         if $isQuotation$ = false {
                                             symbol + $c$
-                                            start = $j$
 
-                                            if $charsLen$ > ($j$ + 1) {
-                                                if $chars[jPlus1]$ == "=" {
+                                            if $charsLen$ > $jPlus1$ {
+                                                if $chars[j]$ = "=" {
                                                     if $c$ = ">" {
                                                         j + 1
                                                         symbol = ">="
@@ -299,9 +291,9 @@ def Tokenize: code {
                                             }
 
                                             isSymbolChar = true
-                                            isNumber = true
-                                            isVariable = true
-                                            isIdentifier = true
+                                            isNumber = false
+                                            isVariable = false
+                                            isIdentifier = false
                                         }
                                     }
                                     if $isQuotation$ = true {
@@ -314,16 +306,16 @@ def Tokenize: code {
                             }
                         }
                         if $happened$ = false {
-                            happened = true
                             if $isQuotation$ = true {
                                 quote + $c$
+                                happened = true
                             }
                             if $isVariable$ = true {
                                 variable + $c$
+                                happened = true
                             }
                         }
                         if $happened$ = false {
-                            happened = true
                             var or = false
                             if isAlpha $c$ {
                                 or = true
@@ -331,10 +323,10 @@ def Tokenize: code {
                             if $isIdentifier$ = true {
                                 or = true
                             }
-                            if $or$ {
-                                if $start$ = -1 { start = $j$ }
+                            if $or$ = true {
                                 identifier + $c$
                                 isIdentifier = true
+                                happened = true
                             }
                         }
                         if $happened$ = false {
@@ -347,50 +339,44 @@ def Tokenize: code {
                                 var tok = Token: $number$, "Number"
                                 tokens = append $tokens$, $tok$
                                 number = none
-                                start = -1
                             }
                         }
                         if $isVariable$ = false {
                             if $variable$ != none {
                                 var tok = Token: $variable$, "Variable"
                                 tokens = append $tokens$, $tok$
-                                variable = none
-                                start = -1
+                                variable = none 
                             }
                         }
-                        if $isQuotatione$ = false {
+                        if $isQuotation$ = false {
                             if $quote$ != none {
                                 var tok = Token: $quote$, "String"
                                 tokens = append $tokens$, $tok$
-                                quote = none
-                                start = -1
+                                quote = none 
                             }
                         }
                         if $isIdentifier$ = false {
                             if $identifier$ != none {
                                 var tokType = "Identifier"
-                                if contains $ReservedKeywrods$, $identifier$ {
+                                if contains $ReservedKeywords$, $identifier$ {
                                     tokType = "Reserved"
                                 }
                                 var tok = Token: $identifier$, $tokType$
                                 tokens = append $tokens$, $tok$
-                                identifier = none
-                                start = -1
+                                identifier = none 
                             }
                         }
                         if $isSymbolChar$ = true {
                             var tok = Token: $symbol$, "Symbol"
                             tokens = append $tokens$, $tok$
-                            isSymbolChar = false;
-                            symbol = "";
-                            start = -1;
+                            isSymbolChar = false
+                            symbol = ""
                         }
                         if $isArray$ = false {
                             if $array$ != none {
                                 var tok = Token: $quote$, "Array"
                                 tokens = append $tokens$, $tok$
-                                array = none
-                                start = -1
+                                array = none 
                             }
                         }
                     }
@@ -398,46 +384,40 @@ def Tokenize: code {
             }
         }
         // assign tokens
-        if $isNumber$ = false {
+        if $isNumber$ = true {
             var tok = Token: $number$, "Number"
             tokens = append $tokens$, $tok$
             number = none
-            start = -1
         }
-        if $isVariable$ = false {
+        if $isVariable$ = true {
             var tok = Token: $variable$, "Variable"
             tokens = append $tokens$, $tok$
             variable = none
-            start = -1
         }
-        if $isQuotation$ = false {
+        if $isQuotation$ = true {
             var tok = Token: $quote$, "String"
             tokens = append $tokens$, $tok$
             quote = none
-            start = -1
         }
-        if $isIdentifier$ = false {
+        if $isIdentifier$ = true {
             var tokType = "Identifier"
-            if contains $ReservedKeywrods$, $identifier$ {
+            if contains $ReservedKeywords$, $identifier$ {
                 tokType = "Reserved"
             }
             var tok = Token: $identifier$, $tokType$
             tokens = append $tokens$, $tok$
             identifier = none
-            start = -1
         }
         if $isSymbolChar$ = true {
             var tok = Token: $symbol$, "Symbol"
             tokens = append $tokens$, $tok$
-            isSymbolChar = false;
-            symbol = "";
-            start = -1;
+            isSymbolChar = false
+            symbol = ""
         }
-        if $isArray$ = false {
+        if $isArray$ = true {
             var tok = Token: $quote$, "Array"
             tokens = append $tokens$, $tok$
             array = none
-            start = -1
         }
 
         var ln = ($i$ + 1)

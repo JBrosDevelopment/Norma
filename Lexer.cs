@@ -187,7 +187,7 @@ namespace NormaLang
                             isArray = arrayCount != 0;
                             array += c;
                         }
-                        else if (c == '.' && chars.Length > j + 1 && isNum(chars[j + 1]))
+                        else if (c == '.' && chars.Length > j + 1 && isNum(chars[j + 1]) && !isQuotation)
                         {
                             start = j;
                             isNumber = true;

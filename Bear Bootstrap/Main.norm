@@ -2,8 +2,17 @@ var Defined_Content = readFile "D:\\Norma\\Bear Bootstrap\\Defined.norm"
 runCode $Defined_Content$
 
 use "Lexer.norm"
+use "Parser.norm"
 
 var test_code_path = combinePath envDir, "test.norm"
 var test_code = readFile $test_code_path$
-var lines = Tokenize $test_code$
-print $lines$
+
+var lexer_lines = Tokenize $test_code$
+
+print "Lexer Lines:"
+print $lexer_lines$
+
+var parser_lines = Parse $lexer_lines$
+
+print "Parser Lines:"
+print $parser_lines$

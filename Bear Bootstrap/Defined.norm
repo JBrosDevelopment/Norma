@@ -25,6 +25,7 @@ def combinePath: path1, path2 {
     if $endsWithSlash$ = false {
         endsWithSlash = endsWith $path1$, "/"
     }
+    
     if $endsWithSlash$ = true {
         var path = "$path1$$path2$"
         var rep = replace $path$, "/", "\\"

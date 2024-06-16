@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Text.RegularExpressions;
 using static NormaLang.Lexer;
 
 namespace NormaLang
@@ -22,23 +23,38 @@ namespace NormaLang
         public static bool Evaluate(string input)
         {
             // Evaluate input and return bool as output
-            
+
             // Convert string to number
-            var allchars = input.Replace("!=", "`").ToCharArray();
+            char[] splitter = [' ', '=', '>', '<', '!'];
+            string[] parts = SplitWithDelimiters(input, splitter).Where(x => x.Trim() != "").ToArray();
             string output = "";
-            for (int i = 0; i < allchars.Length; i++)
+            for (int i = 0; i < parts.Length; i++)
             {
-                if (allchars[i] == '`')
+                var part = parts[i];
+                if (part.ToLower() == "true" || part.ToLower() == "false") output += part;
+                else if (part == "!" || part == ">" || part == "<")
                 {
-                    output += "<>";
+                    if (parts[i + 1] == "=")
+                    {
+                        output += $"{part}=".Replace("!=", "<>");
+                        i++;
+                    }
+                    else
+                    {
+                        output += part.Replace("!=", "<>");
+                    }
                 }
-                else if (isAlpha(allchars[i]))
+                else if (splitter.Contains(part[0]))
                 {
-                    output += ((int)allchars[i]).ToString();
+                    output += part;
+                }
+                else if (!float.TryParse(part, out _))
+                {
+                    output += string.Join("", part.ToCharArray().Select(Convert.ToInt32));
                 }
                 else
                 {
-                    output += allchars[i];
+                    output += part;
                 }
             }
             
@@ -54,6 +70,11 @@ namespace NormaLang
             table.Columns["expression"].Expression = expression;
 
             return (bool)row["expression"];
+        }
+        private static string[] SplitWithDelimiters(string input, char[] delimiters)
+        {
+            string pattern = $"({string.Join("|", delimiters.Select(c => Regex.Escape(c.ToString())))})"; 
+            return Regex.Split(input, pattern); 
         }
     }
 }

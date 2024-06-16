@@ -1,0 +1,46 @@
+struct FunctionReturn { Line, Index }
+
+def returnLineWithReservedToken: tokens, lines, i {
+    var stat = false
+    var line = none
+    if $tokens[0].Value$ = "if" { stat = true }
+    if $tokens[0].Value$ = "else" { stat = true }
+    if $tokens[0].Value$ = "elif" { stat = true }
+    if $tokens[0].Value$ = "while" { stat = true }
+    if $tokens[0].Value$ = "for" { stat = true }
+
+    if $stat$ = true {
+        line = returnStatement $tokens$, $lins$, $i$
+    }
+    elif $tokens[0].Value$ = "def" {
+        line = returnDefine $tokens$, $lins$, $i$
+    }
+    elif $tokens[0].Value$ = "struct" {
+        line = returnStruct $tokens$, $lins$, $i$
+    }
+    else {
+        line = $lines[i]$
+    } 
+
+    var func_returns = FunctionReturn: $line$, $i$
+    return $func_returns$
+}
+
+def Parse: lines {
+    var parser_lines = []
+    for i in length $lines$ {
+        var line = $lines[i]$
+        var tokens = $line.Tokens$
+        var tokLength = length $tokens$
+        
+        if $tokLength$ > 0 {
+            if $tokens[0].Type$ = "Reserved" {
+                var ret = returnLineWithReservedToken $tokens$, $lines$, $i$
+                line = $ret.Line$
+                i = $ret.Index$
+            }
+            parser_lines = append $parser_lines$, $line$
+        }
+    }
+    return $parser_lines$
+}

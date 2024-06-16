@@ -51,25 +51,25 @@ namespace NormaLang
                                         tokens = statement.Input.Skip(i).ToArray();
                                         i += statement.Input.Length - 1;
                                     }
-                                    else if (item.Type == TokenType.Reserved)
+                                    else if (item.Type == TokenType.Reserved && item.Value == "none")
                                     {
                                         input += item.Value + " ";
+                                        continue;
                                     }
+                                    object? val = GetValueFromTokens(tokens);
+                                    char[] ar = val.ToString().ToCharArray();
+                                    if (val == null) input += item.Value + " ";
+                                    else if (val.ToString() == "") input += "none";
+                                    else if (val.ToString().ToLower() == "true") input += "True";
+                                    else if (val.ToString().ToLower() == "false") input += "False";
                                     else
                                     {
-                                        object? val = GetValueFromTokens(tokens);
-                                        char[] ar = val.ToString().ToCharArray();
-                                        if (val == null) input += item.Value + " ";
-                                        else if (val.ToString() == "") input += "none";
-                                        else
+                                        val = "";
+                                        foreach (var c in ar)
                                         {
-                                            val = "";
-                                            foreach (var c in ar)
-                                            {
-                                                val += ((int)c).ToString();
-                                            }
-                                            input += val + " ";
+                                            val += int.TryParse(c.ToString(), out int num) ? num.ToString() : c.ToString() == "." ? c.ToString() : ((int)c).ToString();
                                         }
+                                        input += val + " ";
                                     }
                                 }
                             }
@@ -159,6 +159,7 @@ namespace NormaLang
                                 {
                                     for (var.Value = 0; int.Parse(var.Value.ToString()) < length; var.Value = (int.Parse(var.Value.ToString()) + 1))
                                     {
+                                        Variables.FirstOrDefault(x => x.Name == name).Value = var.Value;
                                         Execute(statement.Lines);
                                     }
                                 }
@@ -177,7 +178,7 @@ namespace NormaLang
                                 }
 
 
-                                Variables = Variables.Where(x => x != var).ToArray();
+                                Variables = Variables.Where(x => x.Name != var.Name).ToArray();
                                 continue;
                         }
                     }
@@ -290,12 +291,14 @@ namespace NormaLang
                                 object? value = GetValueFromTokens(line.Tokens.Skip(3).ToArray());
 
                                 Variable var = new Variable(name, value);
-                                if (Variables.FirstOrDefault(x => x.Name == name) is Variable v)
+                                if (Variables.Any(x => x.Name == name))
                                 {
-                                    v = var;
+                                    Variables.FirstOrDefault(x => x.Name == name).Value = value;
                                 }
-
-                                Variables = Variables.Append(var).ToArray();
+                                else
+                                {
+                                    Variables = Variables.Append(var).ToArray();
+                                }
                             }
                             else if (token.Value == "return")
                             {
@@ -472,7 +475,7 @@ namespace NormaLang
             {
                 obj_parameters[i] = GetValueFromTokens(parameterTokens[i]);
                 if (obj_parameters[i] == null)
-                    throw new Exception($"Could not extract value from function parameter '{i + 1}'");
+                    throw new Exception($"Could not extract value from function parameter '{def.Parameters[i].Name}' in function '{def.Name}'");
             }
             Variable[] parameters = obj_parameters.Select((x, y) => new Variable(def.Parameters[y].Name, x)).ToArray();
 
@@ -632,6 +635,10 @@ namespace NormaLang
                                 if (ret is object[] arr)
                                 {
                                     ret = ArrayToText(arr);
+                                }
+                                if (ret is ExpandoObject e)
+                                {
+                                    ret = StructToText(e);
                                 }
                                 val = ret.ToString();
                             }
@@ -867,10 +874,29 @@ namespace NormaLang
             {
                 object obj = objects[i];
                 if (obj is object[] o) obj = ArrayToText(o);
-                if (obj is ExpandoObject e) obj = ((IDictionary<string, object>)e)["__struct_name"];
+                if (obj is ExpandoObject e) obj = StructToText(e);
                 text += obj + (i != objects.Length - 1 ? ", " : "");
             }
             return text + "]";
+        }
+        internal static string StructToText(ExpandoObject expando)
+        {
+            string text = "";
+            var properties = (IDictionary<string, object>)expando;
+            for (int i = 0; i < properties.Count; i++)
+            {
+                object key = properties.Keys.ToArray()[i];
+                object value = properties.Values.ToArray()[i];
+
+                if (value is string s) value = s == "" ? "none" : $"\"{s}\"";
+                if (value is object[] o) value = ArrayToText(o);
+                if (value is ExpandoObject e) value = StructToText(e);
+
+                object obj = $"{key}={value}";               
+                text += obj + (i != properties.Count - 1 ? ", " : "");
+            }
+
+            return $"{{ {text} }}";
         }
         internal static object[] GetArrayValues(object[] values)
         {

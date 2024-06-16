@@ -1,3 +1,5 @@
+using System.Dynamic;
+
 namespace NormaLang 
 {
     /* 
@@ -34,6 +36,7 @@ namespace NormaLang
             new FEnvPath(),
             new FEnvDir(),
             new FIntToChar(),
+            new FRandom(),
             // stirng:
             new FSubstring(),
             new FIndexOf(),
@@ -59,6 +62,10 @@ namespace NormaLang
             if (value is object[] o)
             {
                 return Execution.ArrayToText(o);
+            }
+            if (value is ExpandoObject e)
+            {
+                return Execution.StructToText(e);
             }
             else
             {
@@ -217,6 +224,18 @@ namespace NormaLang
         {
             string hex = IFunction.ValueToString(args[0]);
             return (char)Convert.ToInt32(hex, 16);
+        }
+    }
+    public class FRandom : IFunction
+    {
+        public string Name { get; } = "random";
+        public int Params { get; } = 2;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            var min = int.Parse(IFunction.ValueToString(args[0]));
+            var max = int.Parse(IFunction.ValueToString(args[1]));
+            return new Random().Next(min, max);
         }
     }
     #endregion
