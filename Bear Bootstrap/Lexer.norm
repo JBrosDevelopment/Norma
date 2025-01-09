@@ -1,60 +1,4 @@
-struct Token { Value, Type } // Types: Identifier, Reserved, Symbol, Variable, Number, String, Array
-struct Line { Tokens, LineNumber, Statement, Defined, Struct }
-
-def isWhiteSpace: ch {
-    var ret = false
-    if $ch$ = " " { ret = true }
-    elif $ch$ = "" { ret = true }
-    return $ret$
-}
-def isNum: ch {
-    var ret = false
-    if $ch$ = "0" { ret = true }
-    elif $ch$ = "1" { ret = true }
-    elif $ch$ = "2" { ret = true }
-    elif $ch$ = "3" { ret = true }
-    elif $ch$ = "4" { ret = true }
-    elif $ch$ = "5" { ret = true }
-    elif $ch$ = "6" { ret = true }
-    elif $ch$ = "7" { ret = true }
-    elif $ch$ = "8" { ret = true }
-    elif $ch$ = "9" { ret = true }
-    elif $ch$ = "." { ret = true }
-    return $ret$
-}
-def isSymbol: ch {
-    var ret = false
-    if $ch$ = "=" { ret = true }
-    elif $ch$ = ">" { ret = true }
-    elif $ch$ = "<" { ret = true }
-    elif $ch$ = "!" { ret = true }
-    elif $ch$ = "+" { ret = true }
-    elif $ch$ = "-" { ret = true }
-    elif $ch$ = "*" { ret = true }
-    elif $ch$ = "/" { ret = true }
-    elif $ch$ = "\$" { ret = true }
-    elif $ch$ = "\"" { ret = true }
-    elif $ch$ = "," { ret = true }
-    elif $ch$ = "(" { ret = true }
-    elif $ch$ = ")" { ret = true }
-    elif $ch$ = "{" { ret = true }
-    elif $ch$ = "}" { ret = true }
-    elif $ch$ = "[" { ret = true }
-    elif $ch$ = "]" { ret = true }
-    elif $ch$ = ":" { ret = true }
-    elif $ch$ = "." { ret = true }
-    return $ret$
-}
-def isAlpha: ch {
-    var ret = true
-    if isNum $ch$ { ret = false }
-    elif isWhiteSpace $ch$ { ret = false }
-    elif isSymbol $ch$ { ret = false }
-    return $ret$
-}
-
 def Tokenize: code {
-    var ReservedKeywords = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none"]
     var lines = split $code$, "\n"
     for i in length $lines$ {
         lines[i] = trim $lines[i]$
@@ -127,38 +71,26 @@ def Tokenize: code {
                     }
                     else { print "Unknown escape character: \\$c$ in line $lineNumber$" }
                 }
-                if $charsLen$ > $jPlus1$ {
-                    if $c$ = "\\" {
-                        if $isQuotation$ = false {
-                            print "Tried using escape char '\\' outside of string in line $lineNumber$"
-                        }
-                        else {
-                            escapeChar = true
-                            continue = true
-                        }
-                    }
-                }
                 if $continue$ = false {
                     if $charsLen$ > $jPlus1$ {
                         if $c$ = "/" {
-                            if $chars[jPlus1]$ == "*" { 
+                            if $chars[jPlus1]$ = "*" { 
                                 blockComment = true 
                             }
                         }
                         if $c$ = "*" {
-                            if $chars[jPlus1]$ == "/" {
+                            if $chars[jPlus1]$ = "/" {
                                 blockComment = false
                                 blockCommentNumber = 2
                             }
                         }
                     }
 
-                    if $blockComment$ = false { blockCommentNumber - 1 }
-                    if $blockComment$ = true {
-                        if $blockCommentNumber$ >= 0 {
-                            continue = true
-                        }
-                    }
+                    blockCommentNumber - 1
+                    var blockCommentOr = $blockComment$
+                    if $blockCommentNumber$ >= 0 { blockCommentOr = true }
+                    if $blockCommentOr$ = true { continue = true }
+
                     if $charsLen$ > $jPlus1$ {
                         if $c$ = "/" {
                             if $chars[jPlus1]$ = "/" {
@@ -167,8 +99,25 @@ def Tokenize: code {
                             }
                         }
                     }
+                    if $charsLen$ > $jPlus1$ {
+                        if $c$ = "\\" {
+                            if $isQuotation$ = false {
+                                print "Tried using escape char '\\' outside of string in line $lineNumber$"
+                            }
+                            else {
+                                escapeChar = true
+                                continue = true
+                            }
+                        }
+                    }
 
                     if $continue$ = false {
+                        var isCorrectCharBecauseOfMinus = true
+                        if $c$ = "-" {
+                            if $charsLen$ > $jPlus1$ {
+                                isCorrectCharBecauseOfMinus = isNum $chars[jPlus1]$
+                            }
+                        }
 
                         if $isArray$ = true {
                             if $c$ != "[" {
@@ -200,9 +149,11 @@ def Tokenize: code {
                                     if $isQuotation$ = false {
                                         if $isIdentifier$ = false {
                                             if $isArray$ = false {
-                                                isNumber = true
-                                                number + $c$
-                                                happened = true
+                                                if $isCorrectCharBecauseOfMinus$ = true {
+                                                    isNumber = true
+                                                    number = append $number$, $c$
+                                                    happened = true
+                                                }
                                             }
                                         }   
                                     }
@@ -230,14 +181,17 @@ def Tokenize: code {
                                                 var symbHappened = true
                                             }
                                         }
-                                    }
-                                }
-                                if $c$ = "." {
-                                    if $charsLen$ > $jPlus1$ {
-                                        if isNum $chars[jPlus1]$ {
-                                            isNumber = true
-                                            number + $c$
-                                            var symbHappened = true
+                                        var charIsDashOrDot = false
+                                        if $c$ = "." { charIsDashOrDot = true }
+                                        if $c$ = "-" { charIsDashOrDot = true }
+                                        if $charIsDashOrDot$ = true {
+                                            if $charsLen$ > $jPlus1$ {
+                                                if isNum $chars[jPlus1]$ {
+                                                    isNumber = true
+                                                    number + $c$
+                                                    var symbHappened = true
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -249,23 +203,37 @@ def Tokenize: code {
                                     var symbHappened = true
                                 }
                                 if $c$ = "\$" {
-                                    tempWasQuote = false
+                                    var _twq = false
+                                    // tempWasQuote = false 
                                     if $isQuotation$ = true {
-                                        tempWasQuote = true
+                                        _twq = true
                                     }
+                                    // tempWasQuote = false
                                     if $isQuotation$ = false {
                                         if $isVariable$ = $tempWasQuote$ {
-                                            tempWasQuote = true
+                                            if $isVariable$ = true {
+                                                _twq = true
+                                            }
                                         }
                                     }
+                                    tempWasQuote = $_twq$
+                                    // tempWasQuote = true 
                                     var isq = false
+                                    // isq = false
                                     if $isQuotation$ = false { isq = true }
+                                    // isq = false
                                     var ist = false
+                                    // ist = false
                                     if $isq$ = $tempWasQuote$ { ist = true }
+                                    // ist = false
                                     isQuotation = $ist$
+                                    // isQuotation = false
                                     isq = false
+                                    // isq = false
                                     if $isVariable$ = false { isq = true }
+                                    // isq = true
                                     isVariable = $isq$
+                                    // isVariable = true
                                     var symbHappened = true
                                 }
                                 if $symbHappened$ = false {
@@ -274,7 +242,7 @@ def Tokenize: code {
                                             symbol + $c$
 
                                             if $charsLen$ > $jPlus1$ {
-                                                if $chars[j]$ = "=" {
+                                                if $chars[jPlus1]$ = "=" {
                                                     if $c$ = ">" {
                                                         j + 1
                                                         symbol = ">="
@@ -425,4 +393,56 @@ def Tokenize: code {
         lexerLines = append $lexerLines$, $line$
     }
     return $lexerLines$
+}
+def isWhiteSpace: ch {
+    var ret = false
+    if $ch$ = " " { ret = true }
+    elif $ch$ = "" { ret = true }
+    return $ret$
+}
+def isNum: ch {
+    var ret = false
+    if $ch$ = "0" { ret = true }
+    elif $ch$ = "1" { ret = true }
+    elif $ch$ = "2" { ret = true }
+    elif $ch$ = "3" { ret = true }
+    elif $ch$ = "4" { ret = true }
+    elif $ch$ = "5" { ret = true }
+    elif $ch$ = "6" { ret = true }
+    elif $ch$ = "7" { ret = true }
+    elif $ch$ = "8" { ret = true }
+    elif $ch$ = "9" { ret = true }
+    elif $ch$ = "." { ret = true }
+    elif $ch$ = "-" { ret = true }
+    return $ret$
+}
+def isSymbol: ch {
+    var ret = false
+    if $ch$ = "=" { ret = true }
+    elif $ch$ = ">" { ret = true }
+    elif $ch$ = "<" { ret = true }
+    elif $ch$ = "!" { ret = true }
+    elif $ch$ = "+" { ret = true }
+    elif $ch$ = "-" { ret = true }
+    elif $ch$ = "*" { ret = true }
+    elif $ch$ = "/" { ret = true }
+    elif $ch$ = "\$" { ret = true }
+    elif $ch$ = "\"" { ret = true }
+    elif $ch$ = "," { ret = true }
+    elif $ch$ = "(" { ret = true }
+    elif $ch$ = ")" { ret = true }
+    elif $ch$ = "{" { ret = true }
+    elif $ch$ = "}" { ret = true }
+    elif $ch$ = "[" { ret = true }
+    elif $ch$ = "]" { ret = true }
+    elif $ch$ = ":" { ret = true }
+    elif $ch$ = "." { ret = true }
+    return $ret$
+}
+def isAlpha: ch {
+    var ret = true
+    if isNum $ch$ { ret = false }
+    elif isWhiteSpace $ch$ { ret = false }
+    elif isSymbol $ch$ { ret = false }
+    return $ret$
 }

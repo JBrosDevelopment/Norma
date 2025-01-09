@@ -1,0 +1,20 @@
+def getFunctions {
+    var FPrint = Function: "print", 1, false
+    var FInput = Function: "input", 0, true
+    var FClear = Function: "clear", 0, false
+    return [$FPrint$, $FInput$, $FClear$]
+}
+def ExecutePermanentFunction: funcName, params {
+    var ret = none
+    if $funcName$ = "print" {
+        var text = $params[0]$
+        print $text$
+    }
+    if $funcName$ = "input" {
+        ret = input
+    }
+    if $funcName$ = "clear" {
+        clear
+    }
+    return $ret$
+}

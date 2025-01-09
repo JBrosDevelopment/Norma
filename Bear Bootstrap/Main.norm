@@ -1,18 +1,33 @@
 var Defined_Content = readFile "D:\\Norma\\Bear Bootstrap\\Defined.norm"
 runCode $Defined_Content$
 
+use "Structs.norm"
+use "Functions.norm"
 use "Lexer.norm"
 use "Parser.norm"
+use "Execution.norm"
 
 var test_code_path = combinePath envDir, "test.norm"
 var test_code = readFile $test_code_path$
 
+keep var ReservedKeywords = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none", "keep"]
+
 var lexer_lines = Tokenize $test_code$
 
-print "Lexer Lines:"
-print $lexer_lines$
+print "lexing completed"
 
 var parser_lines = Parse $lexer_lines$
 
-print "Parser Lines:"
-print $parser_lines$
+print "parsing completed"
+
+var json = toJSON $parser_lines$
+writeFile "D:\\Norma\\Bear Bootstrap\\parser_lines.json", $json$
+
+keep var Functions = getFunctions
+keep var Variables = []
+keep var Defined = []
+keep var Defined = []
+keep var Structs = []
+keep var Returning = none
+
+Execute $parser_lines$

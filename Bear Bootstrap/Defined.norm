@@ -12,10 +12,10 @@ def replace: val, check, rep {
     var str = ""
     for c in $val$ {
         if $c$ = $check$ {
-            str + $rep$
+            str + append $str$, $rep$
         }
         else {
-            str + $c$
+            str = append $str$, $c$
         }
     }
     return $str$
@@ -69,6 +69,86 @@ def contains: array, value {
     for i in $array$ {
         if $i$ = $value$ {
             ret = true
+        }
+    }
+    return $ret$
+}
+def join: array, text {
+    var string = none
+    var len = length $array$
+    var lenMinusOne = ($len$ - 1)
+    for i in $len$ {
+        string + $array[i]$
+        if $i$ != $lenMinusOne$ {
+            string + $text$
+        }
+    }
+    return $string$
+}
+def skip: array, index {
+    var newArray = []
+    for i in length $array$ {
+        if $i$ >= $index$ { 
+            newArray = append $newArray$, $array[i]$
+        }
+    }
+    return $newArray$
+}
+def take: array, index {
+    var newArray = []
+    for i in length $array$ {
+        if $i$ < $index$ { 
+            newArray = append $newArray$, $array[i]$
+        }
+    }
+    return $newArray$
+}
+def last: array {
+    var arLen = length $array$
+    var arIndex = ($arLen$ - 1)
+    return $array[arIndex]$
+}
+def first: array {
+    return $arLen[0]$
+}
+def any: array, test {
+    var ret = false
+    for a in $array$ {
+        for t in $test$ {
+            if $a$ = $t$ {
+                ret = true
+            }
+        }
+    }
+    return $ret$
+}
+
+
+struct DictionaryItem { Key, Value }
+
+def getDictionaryItemFromKey: dictionary, key {
+    var ret = none
+    for d in $dictionary$ {
+        if $d.Key$ = $key$ {
+            ret = $d$
+        }
+    }
+    return $ret$
+}
+def getDictionaryValueFromKey: dictionary, key {
+    var ret = none
+    for d in $dictionary$ {
+        if $d.Key$ = $key$ {
+            ret = $d.Value$
+        }
+    }
+    return $ret$
+}
+def getDictionaryIndexFromKey: dictionary, key {
+    var ret = none
+    for i in length $dictionary$ {
+        if $dictionary[i].Key$ = $key$ {
+            ret = $i$
         }
     }
     return $ret$

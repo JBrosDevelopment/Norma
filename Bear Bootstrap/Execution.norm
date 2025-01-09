@@ -1,0 +1,624 @@
+def Execute: lines {
+    var number_line = 0
+    var code_index = 0
+    var error_code = 0
+    var last_if_was_true = false
+    for line in $lines$ {
+        code_index + 1
+        number_line = $line.LineNumber$
+        var tokensLen = length $line.Tokens$
+
+        if $line.Statement$ != none {
+            // do
+        }
+        if $line.Defined$ != none {
+            Defined = append $Defined$, $line.Defined$
+        }
+        if $line.Struct$ != none {
+            Struct = append $Struct$, $line.Struct$
+        }
+        if $tokensLen$ != 0 {
+            var token = $line.Tokens[0]$
+            if $token.Type$ = "Identifier" {
+                var is_func = none
+                for func in $Functions$ {
+                    if $func.Name$ = $token.Value$ {
+                        is_func = $func$
+                    }
+                }
+                if $is_func$ != none {
+                    executeFunction $is_func$, $line.Tokens$
+                }
+                if $is_func$ = none {
+                    var is_def = none
+                    for de in $Defined$ {
+                        if $de.Name$ = $token.Value$ {
+                            is_def = $de$
+                        }
+                    }
+                    if $is_def$ != none {
+                        executeDefinedFunction $de$, $line.Tokens$
+                    }
+                    if $is_def$ = none {
+                        var _var = none
+                        for v in $Variables$ {
+                            if $v.Name$ = $token.Value$ {
+                                _var = $v$
+                            }
+                        }
+                        if $_var$ != none {
+                            if $tokensLen$ < 3 {
+                                print "Variable operation syntax is incorrect. Correct syntax is, 'NAME = VALUE' where '=' can be any operator in line $number_line$"
+                            }
+                            if $line.Tokens[1].Type$ != "Symbol" {
+                                print "Variable operation syntax is incorrect. Correct syntax is, 'NAME = VALUE' where '=' can be any operator in line $number_line$"
+                            }
+
+                            var is_complex_var = false
+                            if $line.Tokens[1].Value$ = "[" { is_complex_var = true }
+                            if $line.Tokens[1].Value$ = "." { is_complex_var = true }
+                            if $is_complex_var$ = true {
+                                setComplexVariable $line.Tokens$
+                            }
+                            if $is_complex_var$ = false {
+                                var line_tokens_skip_2 = skip $line.Tokens$, 2
+                                var value = getValueFromTokens $line_tokens_skip_2$, false
+
+                                var correct_operator = false
+                                var float_try_parse_var = tryParse $var.Value$
+                                var float_try_parse_set = tryParse $value$
+                                if $line.Tokens[1].Value$ = "=" {
+                                    _var.Value = $value$
+                                }
+                                if $line.Tokens[1].Value$ = "+" {
+                                    if $float_try_parse_var$ != none {
+                                        if $float_try_parse_set$ != none {
+                                            _var.Value = ($float_try_parse_var$ + $float_try_parse_set$)
+                                        }
+                                        if $float_try_parse_set$ = none {
+                                            print "Can not add type string to number in line $number_line$"
+                                        }
+                                    }
+                                    if $float_try_parse_var$ = none {
+                                        _var.Value = append $var.Value$, $value$
+                                    }
+                                    correct_operator = true
+                                }
+                                if $line.Tokens[1].Value$ = "-" {
+                                    if $float_try_parse_var$ != none {
+                                        if $float_try_parse_set$ != none {
+                                            _var.Value = ($float_try_parse_var$ - $float_try_parse_set$)
+                                        }
+                                    }
+                                    if $float_try_parse_var$ = none {
+                                        print "Can not subtract from a variable with type string in line $number_line$"
+                                    }
+                                    correct_operator = true
+                                }
+                                if $line.Tokens[1].Value$ = "*" {
+                                    if $float_try_parse_var$ != none {
+                                        if $float_try_parse_set$ != none {
+                                            _var.Value = ($float_try_parse_var$ * $float_try_parse_set$)
+                                        }
+                                    }
+                                    if $float_try_parse_var$ = none {
+                                        print "Can not multiply to a variable with type string in line $number_line$"
+                                    }
+                                    correct_operator = true
+                                }
+                                if $line.Tokens[1].Value$ = "/" {
+                                    if $float_try_parse_var$ != none {
+                                        if $float_try_parse_set$ != none {
+                                            _var.Value = ($float_try_parse_var$ / $float_try_parse_set$)
+                                        }
+                                    }
+                                    if $float_try_parse_var$ = none {
+                                        print "Can not divide a variable with type string in line $number_line$"
+                                    }
+                                    correct_operator = true
+                                }
+                                if $correct_operator$ = false {
+                                    print "Expects a correct operator, '=', '+', '-', '*', or '/' in line $number_line$"
+                                }
+                            }
+                        }
+                        if $_var$ = none {
+                            print "'$token.Value$' is not defined in this context in line $number_line$"
+                        }
+                    }
+                }
+            }
+            if $token.Type$ = "Reserved" {
+                var keepVar = false
+                var line_tokens_skip_1 = skip $line.Tokens$, 1
+                var reserved_correct = false
+                if $token.Value$ = "keep" {
+                    if $line.Tokens[1].Type$ != "Reserved" {
+                        if $line.Tokens[1].Value$ != "var" {
+                            print "Expected 'keep' keyword to be before 'var' declaration in line $number_line$"
+                        }
+                    }
+                    line.Tokens = $line_tokens_skip_1$
+                    token = $line.Tokens[0]$
+                    keepVar = true
+                    reserved_correct = true
+                }
+                if $token.Value$ = "var" {
+                    if $tokensLen$ < 4 {
+                        print "Variable declaration is incorrect. Correct syntax is, 'var NAME = VALUE' in line $line_number$"
+                    }
+                    if $line.Tokens[2].Value$ != "=" {
+                        print "Variable declaration is incorrect. Correct syntax is, 'var NAME = VALUE' in line $line_number$"
+                    }
+
+                    var name = $line.Tokens[1].Value$
+                    for f in $Functions$ {
+                        if $f.Name$ = $name$ {
+                            print "A function with the name '$name$' already exists in line $line_number$"
+                        }
+                    }
+                    if contains $ReservedKeywords$, $name$ {
+                        print "'$name$' is a reserved token and cannot be a name for a variable in line $line_number$"
+                    }
+
+                    var line_tokens_skip_3 = skip $line.Tokens$, 3
+                    var value = getValueFromTokens $line_tokens_skip_3$, false
+
+                    var _var = Variable: $name$, $value$, $keepVar$
+                    var is_already_var = false
+                    var change_variable = none
+                    for v in $Variables$ {
+                        if $v.Name$ = $name$ {
+                            change_variable = $v$
+                            is_already_var = true
+                        }
+                    }
+                    if $is_already_var$ = false {
+                        Variables = append $Variables$, $_var$
+                    }
+                    else {
+                        change_variable.Value = $value$
+                    }
+
+                    reserved_correct = true
+                }
+                if $token.Value$ = "return" {
+                    var value = getValueFromTokens $line_tokens_skip_1$, false
+                    Returning = $value$
+                    reserved_correct = true
+                }
+                if $reserved_correct$ = false {
+                    print "Error, the reserved keyword, '$token.Value$' is not expected in line $number_line$"
+                }
+
+            }
+            if $token.Type$ != "Identifier" {
+                if $token.Type$ != "Reserved" {
+                    print "Expects first token to be identifier or keyword in line $number_line$"
+                }
+            }
+        }
+    }
+}
+
+def setComplexVariable: tokens {
+    var string_tokens = []
+    for t in $tokens$ { 
+        string_tokens = append $string_tokens$, $t.Value$
+    }
+    var parts = __regexSplitTokens $string_tokens$
+    var partsLen = length $parts$
+
+    var name = $parts[0]$
+    var variable = none;
+    var var_found = false
+    for v in $Variables$ {
+        if $v.Name$ = $name$ {
+            if $var_found$ = false {
+                var_found = true
+                variable = $v$
+            }
+        }
+    }
+    if $var_found$ = false {
+        print "Variable '$name$' not found"
+    }
+
+    var value = $variable.Value$
+    var val =   $variable.Value$
+
+    var skipToken = 0
+    var parentObjects = []
+    var indexes = []
+    var propNames = []
+
+    var symbols = ["=", "+", "-", "/", "*"]
+    for i in length $parts$ {
+        var skip = 2
+        var iPlus1 = ($i$ + 1)
+        var iPlus2 = ($i$ + 2)
+        var iPlusSkip = ($i$ + $skip$)
+        if any $parts[i]$, $symbols$ {
+            skipToken = $i$
+        }
+        elif $partsLen$ >= $iPlusSkip$ {
+            var found = false
+            if $parts[i]$ = "[" {
+                skip = 2
+
+                var lexer_tokens_all = Tokenize $parts[iPlus1]$
+                var lexerTokens = $lexer_tokens_all[0].Tokens$
+                var index = getValueFromTokens $lexerTokens$, true
+                if $parts[iPlus2]$ != "]" { print "Expected syntax 'varName[INDEX]'" }
+                i + $skip$
+
+                parentObjects = append $parentObjects$, $val$
+                indexes = append $indexes$, $index$
+                propNames = append $propNames$, ""
+                val = $val[index]$
+                found = true
+            }
+            if $parts[i]$ = "." {
+                skip = 1
+
+                var propName = $parts[iPlus1]$
+                
+                parentObjects = append $parentObjects$, $val$
+                indexes = append $indexes$, -1
+                propNames = append $propNames$, $propName$
+                val = getDictionaryValueFromKey $val$, $propName$
+                found = true
+
+                i + $skip$
+            }
+            if $found$ = false {
+                print "Expected syntax 'varName[INDEX]'"
+            }
+        }
+        if $partsLen$ < $iPlusSkip$ {
+            print "Expected syntax 'varName[INDEX]'"
+        }
+    }
+    var tokensSkip = skip $tokens$, ($skipToken$ + 1)
+    var set = getValueFromTokens $tokensSkip$, false
+
+    var correct_operator = false
+    var float_try_parse_var = tryParse $val$
+    var float_try_parse_set = tryParse $val$
+
+    if $tokens[skipToken].Value$ = "=" {
+        val = $set$
+    }
+    if $tokens[skipToken].Value$ = "+" {
+        if $float_try_parse_var$ != none {
+            if $float_try_parse_set$ != none {
+                val = ($float_try_parse_var$ + $float_try_parse_set$)
+            }
+            if $float_try_parse_set$ = none {
+                print "Can not add type string to number in line $number_line$"
+            }
+        }
+        if $float_try_parse_var$ = none {
+            val = append $var.Value$, $set$
+        }
+        correct_operator = true
+    }
+    if $tokens[skipToken].Value$ = "-" {
+        if $float_try_parse_var$ != none {
+            if $float_try_parse_set$ != none {
+                val = ($float_try_parse_var$ - $float_try_parse_set$)
+            }
+        }
+        if $float_try_parse_var$ = none {
+            print "Can not subtract from a variable with type string in line $number_line$"
+        }
+        correct_operator = true
+    }
+    if $tokens[skipToken].Value$ = "*" {
+        if $float_try_parse_var$ != none {
+            if $float_try_parse_set$ != none {
+                val = ($float_try_parse_var$ * $float_try_parse_set$)
+            }
+        }
+        if $float_try_parse_var$ = none {
+            print "Can not multiply to a variable with type string in line $number_line$"
+        }
+        correct_operator = true
+    }
+    if $tokens[skipToken].Value$ = "/" {
+        if $float_try_parse_var$ != none {
+            if $float_try_parse_set$ != none {
+                val = ($float_try_parse_var$ / $float_try_parse_set$)
+            }
+        }
+        if $float_try_parse_var$ = none {
+            print "Can not divide a variable with type string in line $number_line$"
+        }
+        correct_operator = true
+    }
+    if $correct_operator$ = false {
+        print "Expects a correct operator, '=', '+', '-', '*', or '/' in line $number_line$"
+    }
+
+    var poMinus1 ($parentObjects$ - 1)
+    var continue = true
+    var i = length $poMinus1$
+    i = ($i$ - 1)
+    while $continue$ {
+        if $indexes[i]$ == -1 {
+            var dictionary = $parentObjects[i]$
+            var propName = $propNames[i]$
+            var keyIndex = getDictionaryIndexFromKey $dictionary$, $propName$
+            dictionary[keyIndex] = $val$
+            val = $dictionary$
+        }
+        else {
+            var array = $parentObjects[i]$
+            var index = indexes[i]
+            array[index] = $val$
+            val = $array$
+        }
+
+        if $i$ >= 0 {
+            continue = true
+        }
+        else {
+            continue = false
+        }
+        i = ($i$ - 1)
+    }
+
+    variable.Value = $value$
+}
+
+def executeDefinedFunction: de, tokens {
+    var parameterTokens = []
+    for i in length $de.Parameters$ {
+        parameterTokens = append $parameterTokens$, none
+    }
+    var paramsCount = 0
+    var tokens_skip_1 = skip $tokens$, 1
+    for i in length $tokens_skip_1$ {
+        if $tokens[i].Type$ = "Symbol" {
+            if $tokens[i].Value$ = "," {
+                paramsCount + 1
+            }
+        }
+        if parameterTokens[$paramsCount$] = none {
+            parameterTokens[$paramsCount$] = [$tokens[i]$]
+        }
+        else {
+            parameterTokens[$paramsCount$] = append $parameterTokens[paramsCount]$, $tokens[i]$
+        }
+    }
+    var obj_parameters = []
+    for p in $parameterTokens$ {
+        var value_from_token = getValueFromTokens $p$
+        if $value_from_token$ = none {
+            print "Could not extract value from function parameter in function '$de.Name$'"
+        }
+        obj_parameters = append $obj_parameters$, $value_from_token$
+    }
+    var parameters = []
+    for i in length $obj_parameters$ {
+        var Var = Variable: $de.Parameters[i].Name$, $obj_parameters[i]$, false
+        parameters = append $Var$
+    }
+    var keepVariables = []
+    for v in $Variables$ {
+        if $v.Keep$ = true {
+            keepVariables = append $keepVariables$, $v$
+        }
+    }
+    var outsideOfFunc = []
+    for v in $Variables$ {
+        if $v.Keep$ = false {
+            outsideOfFunc = append $outsideOfFunc$, $v$
+        }
+    }
+
+    Variables = $parameters$
+    Variables = concat $Variables$, $keepVariables$
+    Execute $de.Lines$
+    var val = $Returning$
+    Returning = none
+
+    Variables = $outsideOfFunc$
+    Variables = concat $Variables$, $keepVariables$
+
+    return $val$
+}
+
+def executeFunction: func, tokens {
+    var parameterTokens = []
+    if $func.Params$ != none {
+        for i in $func.Params$ {
+            parameterTokens = append $parameterTokens$, none
+        }
+    }
+    var paramsCount = 0
+    var tokens_skip_1 = skip $tokens$, 1
+    for i in length $tokens_skip_1$ {
+        if $tokens_skip_1[i].Type$ = "Symbol" {
+            if $tokens_skip_1[i].Value$ = "," {
+                paramsCount + 1
+            }
+        }
+        var pToken = $parameterTokens[paramsCount]$
+        if $pToken$ = none {
+            parameterTokens[$paramsCount$] = [$tokens_skip_1[i]$]
+        }
+        else {
+            parameterTokens[$paramsCount$] = append $pToken$, $tokens_skip_1[i]$
+        }
+    }
+    var obj_parameters = []
+    for p in $parameterTokens$ {
+        var value_from_token = getValueFromTokens $p$, false
+        if $value_from_token$ = none {
+            print "Could not extract value from function parameter in function '$func.Name$'"
+        }
+        obj_parameters = append $obj_parameters$, $value_from_token$
+    }
+    var execute = ExecutePermanentFunction $func.Name$, $obj_parameters$
+    return $execute$
+}
+
+def getValueFromTokens: tokens, getVariableFromIdentifier {
+    var value = none
+    var tokensLen = length $tokens$
+
+    if $tokens[0].Type$ = "Symbol" {
+        if $tokens[0].Value$ = "(" {
+            var parenthesis_close = 1
+            var equation = "("
+            for i in length $tokens$ {
+                if $tokens[i].Value$ = ")" { parenthesis_close - 1 }
+                if $tokens[i].Value$ = "(" { parenthesis_close + 1 }
+
+                var val = $tokens[i].Value$
+                if $tokens[i].Type$ = "Variable" {
+                    val = getValueFromTokens $tokens[i]$, true
+                    if $val$ = none {
+                        print "The variable '$val$' is not defined yet or doesn't exist"
+                    }
+                }
+                equation + $val$
+            }
+        }
+        value = solveEquation $equation$
+    }
+    if $tokens[0].Type$ = "String" {
+        value = $tokens[0].Value$
+        if $tokensLen$ > 1 {
+            var all_is_string_or_var = true 
+            for t in $tokens$ {
+                if $t.Type$ != "Variable" {
+                    if $t.Type$ != "String" {
+                        all_is_string_or_var = false
+                    }
+                }
+            }
+            if $all_is_string_or_var$ = false {
+                print "Cannot have value after string value"
+            }
+            else {
+                var text = ""
+                for i in length $tokens$ {
+                    var val = $tokens[i].Value$
+                    var ret = none
+                    if $tokens[i].Type$ = "Variable" {
+                        var _parts = __regexSplitTokens $tokens[i].Value$
+                        var parts = []
+                        for p in $_parts$ {
+                            if $p$ != "" {
+                                if $p$ != " " {
+                                    parts = append $parts$, $p$
+                                }
+                            }
+                        }
+                        var is_complex_var = true
+                        for v in $Variables$ {
+                            if $v.Name$ = $val$ {
+                                ret = $v.Value$
+                            }
+                        }
+                        var partsLen = length $parts$
+                        if $partsLen$ <= 0 {
+                            is_complex_var = false
+                        }
+                        if $is_complex_var$ = true {
+                            if $partsLen$ > 1 {
+                                if $parts[1]$ != "[" {
+                                    if $parts[1]$ != "." {
+                                        is_complex_var = false
+                                        print "Expected syntax 'varName[INDEX]' or 'varName.PROPERTY'"
+                                    }
+                                }
+                            }
+                            if $is_complex_var$ = true {
+                                var name = $parts[0]$
+                                var variable = none
+                                for v in $Variables$ {
+                                    if $v.Name$ = $name$ {
+                                        variable = $v$
+                                    }
+                                }
+                                if $variable$ = none {
+                                    print "Variable '$name$' does not exist"
+                                }
+                                ret = $variable.Name$
+
+                                var first = false
+                                for j in $partsLen$ {
+                                    if $first$ = true {
+                                        var skip = 0
+                                        var jPlusOne = ($j$ + 1)
+                                        var jPlusTwo = ($j$ + 2)
+                                        var is_larger = false
+                                        if $partsLen$ >= $jPlusTwo$ {
+                                            is_larger = true
+                                            if $parts[j]$ = "[" {
+                                                skip = 2
+                                                var lexer = Tokenize $parts[jPlusOne]$
+                                                var lexerTokens = $lexer[0].Tokens$
+                                                var index = getValueFromTokens $lexerTokens$, true
+                                                if $jPlusTwo$ != "]" { print "Expected syntax 'varName[INDEX]'" }
+                                                ret = $ret[index]$
+                                            }
+                                            if $parts[j]$ = "." {
+                                                skip = 1
+                                                var lexer = Tokenize $parts[jPlusOne]$
+                                                var lexerTokens = $lexer[0].Tokens$
+                                                var propName = $lexer_lines[0].Value$
+                                                ret = getDictionaryValueFromKey $ret$, $propName$
+                                            }
+                                            if $skip$ = 0 {
+                                                print "Expected syntax 'varName[INDEX]' or 'varName.PROPERTY'"
+                                            }
+                                            j + $skip$
+                                            
+                                            // functionality -> point: VarName
+                                            // can't add because can't check the type variable's value
+                                            // if (ret is Variable v)
+                                            // {
+                                            //     ret = v.Value;
+                                            // }
+                                        }
+                                        if $is_larger$ = false {
+                                            print "Expected syntax 'varName[INDEX]' or 'varName.PROPERTY'"
+                                        }
+                                    }
+                                    first = true
+                                }
+                            }
+                            // functionality -> turning struct and arrays into string [ ] { }
+                            // can't add because can't check the type 'ret' is
+                            // if (ret is object[] arr)
+                            // {
+                            //     ret = ArrayToText(arr);
+                            // }
+                            // if (ret is ExpandoObject e)
+                            // {
+                            //     ret = StructToText(e);
+                            // }
+
+                            val = $ret$ // to string
+                        }
+                        text = append $text$, $val$
+                    }
+                    text + $val$
+                }
+                value = $text$
+            }
+        }
+    }
+    if $tokens[0].Type$ = "Number" {
+        if $tokensLen$ > 1 {
+            if $tokens[1].Type$ = "Symbol" { print "Any equations need to be done inside parenthesis" }
+            else { print "Cannot have value after variable value" }
+        }
+        value = $tokens[0].Value$
+    }
+    return $value$
+}

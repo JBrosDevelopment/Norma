@@ -23,6 +23,10 @@
   <ItemGroup>
     <Content Include="images\Norma.ico" />
   </ItemGroup>
+	
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="images\Norma %28128px%29.png">

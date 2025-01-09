@@ -22,7 +22,7 @@
 		},
 		{
 			"name": "keyword.other.norma",
-			"match": "\\b(var|def|struct|new|true|false|none)\\b"
+			"match": "\\b(var|def|struct|new|true|false|none|keep)\\b"
 		},
 		{
 			"name": "support.function.norma",

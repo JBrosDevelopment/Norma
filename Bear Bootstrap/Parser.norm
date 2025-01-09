@@ -1,30 +1,5 @@
 struct FunctionReturn { Line, Index }
-
-def returnLineWithReservedToken: tokens, lines, i {
-    var stat = false
-    var line = none
-    if $tokens[0].Value$ = "if" { stat = true }
-    if $tokens[0].Value$ = "else" { stat = true }
-    if $tokens[0].Value$ = "elif" { stat = true }
-    if $tokens[0].Value$ = "while" { stat = true }
-    if $tokens[0].Value$ = "for" { stat = true }
-
-    if $stat$ = true {
-        line = returnStatement $tokens$, $lins$, $i$
-    }
-    elif $tokens[0].Value$ = "def" {
-        line = returnDefine $tokens$, $lins$, $i$
-    }
-    elif $tokens[0].Value$ = "struct" {
-        line = returnStruct $tokens$, $lins$, $i$
-    }
-    else {
-        line = $lines[i]$
-    } 
-
-    var func_returns = FunctionReturn: $line$, $i$
-    return $func_returns$
-}
+struct FunctionReturnArray { Lines, Index }
 
 def Parse: lines {
     var parser_lines = []
@@ -43,4 +18,292 @@ def Parse: lines {
         }
     }
     return $parser_lines$
+}
+
+def returnLineWithReservedToken: tokens, lines, i {
+    var stat = false
+    var line = none
+    if $tokens[0].Value$ = "if" { stat = true }
+    elif $tokens[0].Value$ = "else" { stat = true }
+    elif $tokens[0].Value$ = "elif" { stat = true }
+    elif $tokens[0].Value$ = "while" { stat = true }
+    elif $tokens[0].Value$ = "for" { stat = true }
+
+    line = $lines[i]$
+    if $stat$ = true {
+        var ret = returnStatement $tokens$, $lines$, $i$
+        line = $ret.Line$
+        i = $ret.Index$
+    }
+    if $tokens[0].Value$ = "def" {
+        var ret = returnDefine $tokens$, $lines$, $i$
+        line = $ret.Line$
+        i = $ret.Index$
+    }
+    if $tokens[0].Value$ = "struct" {
+        var ret = returnStruct $tokens$, $lines$, $i$
+        line = $ret.Line$
+        i = $ret.Index$
+    }
+
+    var funcReturns = FunctionReturn: $line$, $i$
+    return $funcReturns$
+}
+def returnStatement: tokens, lines, i {
+    var statementType = $tokens[0].Value$
+
+    var tokenInput = []
+    if $statementType$ != "else" {
+        var break = false
+        for j in length $tokens$ {
+            if $j$ != 0 {
+                if $tokens[j].Type$ = "Symbol" {
+                    if $tokens[j].Value$ = "{" {
+                        break = true
+                    }
+                }
+                if $break$ = false {
+                    tokenInput = append $tokenInput$, $tokens[j]$
+                }
+            }
+        }
+    }
+
+    var ret = getLinesInBrackets $tokens$, $lines$, $i$
+    var statementLines = $ret.Lines$
+    i = $ret.Index$
+
+    var statement = Statement: $tokenInput$, $statementLines$, $statementType$
+    var line = Line: [], $lines[i].LineNumber$, $statement$, none, none
+    
+    var funcReturns = FunctionReturn: $line$, $i$
+    return $funcReturns$
+}
+def returnDefine: tokens, lines, i {
+    var line = $lines[i]$
+    var name = $tokens[1].Value$
+    var defLines = []
+    var parameters = []
+
+    var containsParameters = false
+    for token in $tokens$ {
+        if $token.Type$ = "Symbol" {
+            if $token.Value$ = ":" { 
+                containsParameters = true 
+            }
+        }
+    }
+    if $containsParameters$ = true {
+        var parametersTokensSkipped = skip $tokens$, 3
+        var parametersTokens = []
+        var break = false
+        for j in length $parametersTokensSkipped$ {
+            if $parametersTokensSkipped[j].Type$ = "Symbol" {
+                if $parametersTokensSkipped[j].Value$ = "{" {
+                    break = true
+                }
+            }
+            if $break$ = false {
+                parametersTokens = append $parametersTokens$, $parametersTokensSkipped[j]$
+            }
+        }
+        var parametersTokensValue = []
+        for tok in $parametersTokens$ { 
+            parametersTokensValue = append $parametersTokensValue$, $tok.Value$
+        }
+        var parametersAll = join $parametersTokensValue$, ""
+        var parameterParts = split $parametersAll$, ","
+        for param in $parameterParts$ {
+            var v = Variable: $param$, none
+            parameters = append $parameters$, $v$
+        }
+    }
+    var ret = getLinesInBrackets $tokens$, $lines$, $i$
+    var defLines = $ret.Lines$
+
+    var defined = Define: $name$, $defLines$, $parameters$
+    var line = Line: [], $lines[i].LineNumber$, none, $defined$, none
+    i = $ret.Index$
+    
+    var funcReturns = FunctionReturn: $line$, $i$
+    return $funcReturns$
+}
+def returnStruct: tokens, lines, i {
+    var name = $tokens[1].Value$
+    var structLines = []
+    var properties = []
+
+    var ret = getLinesInBrackets $tokens$, $lines$, $i$
+    structLines = $ret.Lines$
+
+    var tokenAr = []
+    for line in $structLines$ {
+        tokenAr = concat $tokenAr$, $line.Tokens$
+    }
+    var stringAr = []
+    for tok in $tokenAr$ {
+        stringAr = append $stringAr$, $tok.Value$
+    }
+
+    var lastWasComma = true
+    var somethingHappend = false
+    for j in length $stringAr$ {
+        var str = $stringAr[j]$
+        if $lastWasComma$ = true {
+            if $str$ = "," {
+                print "Incorrect syntax in struct '$name$', no commas were found in between property names"
+            }
+            else {
+                properties = append $properties$, $str$
+                lastWasComma = false
+            }
+            somethingHappend = true
+        }
+        if $somethingHappend$ = false {
+            if $lastWasComma$ = false {
+                if $str$ = "," {
+                    lastWasComma = true
+                }
+                else {
+                    print "Incorrect syntax in struct '$name$', two commas ',,' were found with no property in between"
+                }
+            }
+        }
+    }
+
+    var struc = Struct: $name$, $properties$
+    var line = Line: [], $lines[i].LineNumber$, none, none, $struc$
+    i = $ret.Index$
+    
+    var funcReturns = FunctionReturn: $line$, $i$
+    return $funcReturns$
+}
+def getLinesInBrackets: tokens, lines, i { 
+    var returnLines = []
+    var line = $lines[i]$
+
+    var openBracketOnSameLine = false
+    var closeBracketOnSameLine = false
+    for j in length $tokens$ {
+        if $tokens[j].Type$ = "Symbol" {
+            if $tokens[j].Value$ = "{" {
+                openBracketOnSameLine = true
+            }
+            if $tokens[j].Value$ = "}" {
+                closeBracketOnSameLine = true
+            }
+        }
+    }
+
+    if $closeBracketOnSameLine$ = true {
+        if $openBracketOnSameLine$ = true {
+            var tokensInBrackets = []
+            var break = false
+            for tok in $tokens$ {
+                if $tok.Type$ = "Symbol" {
+                    if $tok.Value$ = "}" {
+                        break = false
+                    }
+                }
+                if $break$ = true {
+                    tokensInBrackets = append $tokensInBrackets$, $tok$
+                }
+                if $tok.Type$ = "Symbol" {
+                    if $tok.Value$ = "{" {
+                        break = true
+                    }
+                }
+            }
+            if $break$ = true {
+                print "Expected '{' to  be last token in line $line.LineNumber$"
+            }
+            var retLine = Line: $tokensInBrackets$, $line.LineNumber$, none, none, none
+            returnLines = append $returnLines$, $retLine$
+        }
+        if $openBracketOnSameLine$ = false {
+            print "Closing bracket without opening bracket for statement in line $line.LineNumber$"
+        }
+    }
+    if $closeBracketOnSameLine$ = false {
+        var startIndex = ($i$ + 2)
+        if $openBracketOnSameLine$ = true {
+            startIndex - 1
+            var tokensInBrackets = []
+            var break = false
+            for tok in $tokens$ {
+                if $break$ = true {
+                    tokensInBrackets = append $tokensInBrackets$, $tok$
+                }
+                if $tok.Type$ = "Symbol" {
+                    if $tok.Value$ = "{" {
+                        break = true
+                    }
+                }
+            }
+            var tokLen = length $tokensInBrackets$
+            if $tokLen$ != 0 {
+                print "Expected closing bracket on same line if there is code after '{'"
+            }
+        }
+        if $openBracketOnSameLine$ = false {
+            var tokLen = $lines[startIndex].Tokens$ 
+            if $tokLen$ > 0 {
+                if $lines[startIndex].Tokens[0].Type$ != "Symbol" {
+                    if $lines[startIndex].Tokens[0].Value$ = "{" {
+                        print "Expected next line to start with opening bracket in line $line.LineNumber$"
+                    }
+                }
+            }
+        }
+        var bracketCount = 1
+        var lineLen = length $lines$
+        var continue = false
+        i = $startIndex$
+        if $i$ < $lineLen$ { continue = true }
+        while $continue$ {
+            var l = $lines[i]$
+            var lineTokenLength = length $l.Tokens$
+
+            if $lineTokenLength$ > 0 {
+                if $l.Tokens[0].Type$ = "Reserved" {
+                    var ret = returnLineWithReservedToken $l.Tokens$, $lines$, $i$
+                    l = $ret.Line$
+                    i = $ret.Index$
+                }
+            }
+            for tok in $l.Tokens$ {
+                if $tok.Type$ = "Symbol" {
+                    if $tok.Value$ = "{" {
+                        bracketCount + 1
+                    }
+                    if $tok.Value$ = "}" {
+                        bracketCount - 1
+                        if $bracketCount$ = 0 {
+                            var lTokenLast = last $l.Tokens$
+                            if $lTokenLast.Value$ = "}" {
+                                if $lTokenLast.Type$ = "Symbol" {
+                                    if $lineTokenLength$ > 1 {
+                                        l.Tokens = take $l.Tokens$, ($lineTokenLength$ - 1)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if $i$ < $lineLen$ { continue = true }
+            else { continue = false }
+            
+            if $bracketCount$ = 0 { continue = false }
+            else { returnLines = append $returnLines$, $l$ }
+            if $continue$ { i + 1 }
+        }
+        if $bracketCount$ != 0 {
+            print "Expected closing bracket at line $line.LineNumber$"
+        }
+    }
+
+    var funcReturns = FunctionReturnArray: $returnLines$, $i$
+    return $funcReturns$
 }

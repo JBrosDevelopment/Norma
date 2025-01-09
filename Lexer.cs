@@ -44,7 +44,7 @@ namespace NormaLang
                 Struct = @struct;
             }
         }
-        internal static string[] ReservedKeywrods = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none"];
+        internal static string[] ReservedKeywrods = ["var", "if", "elif", "else", "while", "for", "in", "struct", "def", "return", "true", "false", "point", "none", "keep"];
         /*
          * This is the Lexer part of the interpreter. It takes a string and outputs lines of code that contain tokens
          */
@@ -128,16 +128,6 @@ namespace NormaLang
                             default: throw new Exception("Unknown escape character: \\" + c + " in line " + (i + 1));
                         }
                     }
-                    if (chars.Length > j + 1 && c == '\\')
-                    {
-                        if (!isQuotation)
-                        {
-                            throw new Exception("Tried using escape char '\\' outside of string in line " + (i + 1));
-                        }
-                        escapeChar = true;
-                        continue;
-                    }
-
                     if (chars.Length > j + 1 && c == '/' && chars[j + 1] == '*')
                     {
                         blockComment = true;
@@ -156,6 +146,22 @@ namespace NormaLang
                     if (chars.Length > j + 1 && c == '/' && chars[j + 1] == '/')
                         break;
 
+                    if (chars.Length > j + 1 && c == '\\')
+                    {
+                        if (!isQuotation)
+                        {
+                            throw new Exception("Tried using escape char '\\' outside of string in line " + (i + 1));
+                        }
+                        escapeChar = true;
+                        continue;
+                    }
+
+                    bool isCorrectCharBecauseOfMinus = true;
+                    if (c == '-' && chars.Length > j + 1)
+                    {
+                        isCorrectCharBecauseOfMinus = isNum(chars[j + 1]);
+                    }
+
                     if (isArray && c != '[' && c != ']' && !isIdentifier && !isQuotation)
                     {
                         array += c;
@@ -166,7 +172,7 @@ namespace NormaLang
                         if (isVariable) throw new Exception("Can not have whitespace in between '$' in line " + (i + 1)); // added 1 to 'i' to remove line '0' from occuring
                         isIdentifier = false;
                     }
-                    else if (isNum(c) && !isIdentifier && !isVariable && !isQuotation && !isArray)
+                    else if (isNum(c) && !isIdentifier && !isVariable && !isQuotation && !isArray && isCorrectCharBecauseOfMinus)
                     {
                         start = j;
                         isNumber = true;
@@ -188,6 +194,12 @@ namespace NormaLang
                             array += c;
                         }
                         else if (c == '.' && chars.Length > j + 1 && isNum(chars[j + 1]) && !isQuotation)
+                        {
+                            start = j;
+                            isNumber = true;
+                            number += c;
+                        }
+                        else if (c == '-' && chars.Length > j + 1 && isNum(chars[j + 1]) && !isQuotation)
                         {
                             start = j;
                             isNumber = true;
@@ -324,7 +336,7 @@ namespace NormaLang
         }
         internal static bool isNum(char c)
         {
-            return int.TryParse(c.ToString(), out _) || c == '.';
+            return int.TryParse(c.ToString(), out _) || c == '.' || c == '-';
         }
         internal static bool isSymbol(char c)
         {

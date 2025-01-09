@@ -1,4 +1,6 @@
+using Newtonsoft.Json.Linq;
 using System.Dynamic;
+using System.Text.RegularExpressions;
 
 namespace NormaLang 
 {
@@ -26,7 +28,7 @@ namespace NormaLang
             new FPrint(),
             new FInput(),
             new FClear(),
-            // utitlity:
+            // utility:
             new FExit(),
             new FRunCode(),
             new FReadFile(),
@@ -36,8 +38,12 @@ namespace NormaLang
             new FEnvPath(),
             new FEnvDir(),
             new FIntToChar(),
+            new FCharToInt(),
             new FRandom(),
-            // stirng:
+            new FSolveEquation(),
+            new FRegexSplitTokens(),
+            new FToJSON(), //////////////////////////// REMOVE THIS
+            // string:
             new FSubstring(),
             new FIndexOf(),
             new FToLower(),
@@ -226,6 +232,17 @@ namespace NormaLang
             return (char)Convert.ToInt32(hex, 16);
         }
     }
+    public class FCharToInt : IFunction
+    {
+        public string Name { get; } = "charToInt";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            char c = (char)args[0];
+            return (int)c;
+        }
+    }
     public class FRandom : IFunction
     {
         public string Name { get; } = "random";
@@ -236,6 +253,62 @@ namespace NormaLang
             var min = int.Parse(IFunction.ValueToString(args[0]));
             var max = int.Parse(IFunction.ValueToString(args[1]));
             return new Random().Next(min, max);
+        }
+    }
+    public class FSolveEquation : IFunction
+    {
+        public string Name { get; } = "solverEquation";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            string equation = args[0].ToString();
+            System.Data.DataTable dt = new System.Data.DataTable();
+            dt.Columns.Add("expression", typeof(string), equation);
+            System.Data.DataRow row = dt.NewRow();
+            dt.Rows.Add(row);
+
+            return float.Parse((string)row["expression"]);
+        }
+    }
+    public class FRegexSplitTokens : IFunction
+    {
+        public string Name { get; } = "__regexSplitTokens";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            if (args[0] is string)
+            {
+                string token = IFunction.ValueToString(args[0]);
+
+                string[] parts = Regex.Split(token,
+                    @"((?=\[)|(?<=\[))|(?=\])|(?<=\])|(?=\.)|(?<=\.)|(?=\+)|(?<=\+)|(?=\-)|(?<=\-)|(?=\*)|(?<=\*)|(?=\/)|(?<=\/)|(?=\=)|(?<=\=)"
+                    ).Where(x => x != "" && x != " ").ToArray();
+
+                return parts;
+            }
+            else
+            {
+                string[] tokens = (args[0] as object[]).Select(IFunction.ValueToString).ToArray();
+
+                string[] parts = Regex.Split(string.Join("", tokens),
+                    @"((?=\[)|(?<=\[))|(?=\])|(?<=\])|(?=\.)|(?<=\.)|(?=\+)|(?<=\+)|(?=\-)|(?<=\-)|(?=\*)|(?<=\*)|(?=\/)|(?<=\/)|(?=\=)|(?<=\=)"
+                    ).Where(x => x != "" && x != " ").ToArray();
+
+                return parts;
+            }
+        }
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////REMOVE THIS
+    public class FToJSON : IFunction
+    {
+        public string Name { get; } = "toJSON";
+        public int Params { get; } = 1;
+        public bool Returns { get; } = true;
+        public object? Execute(object[] args)
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(args[0], Newtonsoft.Json.Formatting.Indented);
         }
     }
     #endregion
@@ -354,9 +427,25 @@ namespace NormaLang
             {
                 return array.Append(args[1]).ToArray();
             }
+            if (args[0] is string s)
+            {
+                return s + IFunction.ValueToString(args[1]);
+            }
+            if (args[0] is char c)
+            {
+                return c.ToString() + IFunction.ValueToString(args[1]);
+            }
+            if (args[0] is int i)
+            {
+                return i.ToString() + IFunction.ValueToString(args[1]);
+            }
+            if (args[0] is float f)
+            {
+                return f.ToString() + IFunction.ValueToString(args[1]);
+            }
             else
             {
-                throw new Exception("Can not append to variable that is not array");
+                throw new Exception("Can not append to variable that is not array or string");
             }
         }
     }

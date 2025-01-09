@@ -64,12 +64,26 @@ namespace NormaLang
                                     else if (val.ToString().ToLower() == "false") input += "False";
                                     else
                                     {
-                                        val = "";
+                                        object _val = "";
+                                        bool wasNumber = false;
                                         foreach (var c in ar)
                                         {
-                                            val += int.TryParse(c.ToString(), out int num) ? num.ToString() : c.ToString() == "." ? c.ToString() : ((int)c).ToString();
+                                            if (_val.ToString().LastOrDefault(' ') == '-')
+                                            {
+
+                                            }
+                                            if (int.TryParse(c.ToString(), out int num) || c.ToString() == "." || c.ToString() == "-")
+                                            {
+                                                wasNumber = true;
+                                                _val += c.ToString();
+                                            }
+                                            else
+                                            {
+                                                wasNumber = false;
+                                                _val += ((int)c).ToString();
+                                            }
                                         }
-                                        input += val + " ";
+                                        input += _val + " ";
                                     }
                                 }
                             }
@@ -161,6 +175,7 @@ namespace NormaLang
                                     {
                                         Variables.FirstOrDefault(x => x.Name == name).Value = var.Value;
                                         Execute(statement.Lines);
+                                        var.Value = Variables.FirstOrDefault(x => x.Name == name).Value;
                                     }
                                 }
                                 else
@@ -172,7 +187,8 @@ namespace NormaLang
 
                                     foreach (var item in vals)
                                     {
-                                        var.Value = item;
+                                        Variables.FirstOrDefault(x => x.Name == name).Value = item;
+                                        var.Value = Variables.FirstOrDefault(x => x.Name == name).Value;
                                         Execute(statement.Lines);
                                     }
                                 }
@@ -216,7 +232,7 @@ namespace NormaLang
                                         throw new Exception("Variable operation syntax is incorrect. Correct syntax is, 'NAME = VALUE' where '=' can be any operator");
 
 
-                                    if (var.Value is object[] obj && line.Tokens[1].Value == "[" || line.Tokens[1].Value == ".")
+                                    if (var.Value is object[] && line.Tokens[1].Value == "[" || line.Tokens[1].Value == ".")
                                     {
                                         SetComplexVariable(line.Tokens);
                                     }
@@ -266,6 +282,17 @@ namespace NormaLang
                             }
                             break;
                         case TokenType.Reserved:
+                            bool keepVar = false;
+                            if (token.Value == "keep")
+                            {
+                                if (line.Tokens[1].Type != TokenType.Reserved && line.Tokens[1].Value != "var")
+                                {
+                                    throw new Exception("Expected 'keep' keyword to be before 'var' declaration");
+                                }
+                                line.Tokens = line.Tokens.Skip(1).ToArray();
+                                token = line.Tokens[0];
+                                keepVar = true;
+                            }
                             if (token.Value == "var")
                             {
                                 if (line.Tokens.Length < 4)
@@ -290,7 +317,7 @@ namespace NormaLang
 
                                 object? value = GetValueFromTokens(line.Tokens.Skip(3).ToArray());
 
-                                Variable var = new Variable(name, value);
+                                Variable var = new Variable(name, value, keepVar);
                                 if (Variables.Any(x => x.Name == name))
                                 {
                                     Variables.FirstOrDefault(x => x.Name == name).Value = value;
@@ -471,6 +498,10 @@ namespace NormaLang
 
             }
             object[] obj_parameters = new object[def.Parameters.Length];
+            if (parameterTokens.Any(x => x == null))
+            {
+                throw new Exception($"Parameters do not match, found {parameterTokens.Length} but expected {def.Parameters.Length} for function: {def.Name}");
+            }
             for (int i = 0; i < parameterTokens.Length; i++)
             {
                 obj_parameters[i] = GetValueFromTokens(parameterTokens[i]);
@@ -478,15 +509,15 @@ namespace NormaLang
                     throw new Exception($"Could not extract value from function parameter '{def.Parameters[i].Name}' in function '{def.Name}'");
             }
             Variable[] parameters = obj_parameters.Select((x, y) => new Variable(def.Parameters[y].Name, x)).ToArray();
+            Variable[] keepVariables = Variables.Where(x => x.Keep).ToArray();
+            Variable[] outsideOfFunc = Variables.Where(x => !x.Keep).Select(x => new Variable(x.Name, x.Value)).ToArray();
 
-            Variable[] outsideOfFunc = Variables.Select(x => new Variable(x.Name, x.Value)).ToArray();
-
-            Variables = parameters;
+            Variables = [.. parameters, .. keepVariables];
             Execute(def.Lines);
             object? val = Returning;
             Returning = null;
 
-            Variables = outsideOfFunc;
+            Variables = [.. outsideOfFunc, ..keepVariables];
             return val;
         }
         internal static object? ExecuteFunction(IFunction func, Token[] tokens)
@@ -579,6 +610,10 @@ namespace NormaLang
                                 {
                                     string name = parts[0];
                                     Variable variable = Variables.FirstOrDefault(x => x.Name == name);
+                                    if (variable is null)
+                                    {
+                                        throw new Exception($"Could not find variable named '{name}' in this scope");
+                                    }
                                     ret = variable.Value;
 
                                     for (int j = 1; j < parts.Length; j++)
@@ -631,15 +666,15 @@ namespace NormaLang
                                 {
                                     throw new Exception($"The variable '{val}' is not defined yet or doesn't exist");
                                 }
-
-                                if (ret is object[] arr)
+                                /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// FOR TESTING
+                                /*if (ret is object[] arr)
                                 {
                                     ret = ArrayToText(arr);
                                 }
                                 if (ret is ExpandoObject e)
                                 {
                                     ret = StructToText(e);
-                                }
+                                }*/
                                 val = ret.ToString();
                             }
                             text += val;
@@ -673,6 +708,10 @@ namespace NormaLang
                 {
                     if (var.Value is Variable v) value = v.Value;
                     else value = var.Value;
+                }
+                else if (parts.Length == 1)
+                {
+                    throw new Exception($"Could not find variable named '{tokens[0].Value}' in this scope");
                 }
                 else if (parts[1] == "[" || parts[1] == ".")
                 {
@@ -949,6 +988,12 @@ namespace NormaLang
             bool isQuote = false;
             bool isVar = false;
 
+            if (parts.Length == 2 && parts[0] == "[" && parts[1] == "]")
+            {
+                i = 0;
+                return [];
+            }
+
             for (i = start; i < parts.Length; i++)
             {
                 string part = parts[i];
@@ -979,8 +1024,7 @@ namespace NormaLang
                 {
                     bracketCount--;
                     lastWasComma = false;
-                    if (array.Length != 0)
-                        array = [.. array, obj];
+                    array = [.. array, obj];
                 }
                 else if (part == "\"")
                 {

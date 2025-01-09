@@ -1,0 +1,55 @@
+[
+  {
+    "__struct_name": "Line",
+    "Tokens": [
+      {
+        "__struct_name": "Token",
+        "Value": "var",
+        "Type": "Reserved"
+      },
+      {
+        "__struct_name": "Token",
+        "Value": "x",
+        "Type": "Identifier"
+      },
+      {
+        "__struct_name": "Token",
+        "Value": "=",
+        "Type": "Symbol"
+      },
+      {
+        "__struct_name": "Token",
+        "Value": "10",
+        "Type": "Number"
+      }
+    ],
+    "LineNumber": 1.0,
+    "Statement": "",
+    "Defined": "",
+    "Struct": ""
+  },
+  {
+    "__struct_name": "Line",
+    "Tokens": [
+      {
+        "__struct_name": "Token",
+        "Value": "print",
+        "Type": "Identifier"
+      },
+      {
+        "__struct_name": "Token",
+        "Value": "x: ",
+        "Type": "String"
+      },
+      {
+        "__struct_name": "Token",
+        "Value": "x",
+        "Type": "Variable"
+      }
+    ],
+    "LineNumber": 3.0,
+    "Statement": "",
+    "Defined": "",
+    "Struct": ""
+  }
+]

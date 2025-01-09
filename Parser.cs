@@ -103,9 +103,9 @@ namespace NormaLang
             string[] stringAr = tokenAr.Select(x => x.Value).ToArray();
 
             bool lastWasComma = true;
-            for (int k = 0; k < stringAr.Length; k++)
+            for (int j = 0; j < stringAr.Length; j++)
             {
-                string str = stringAr[k];
+                string str = stringAr[j];
                 if (lastWasComma)
                 {
                     if (str == ",")

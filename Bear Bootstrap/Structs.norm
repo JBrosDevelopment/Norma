@@ -1,0 +1,12 @@
+struct Token { Value, Type } // Types: Identifier, Reserved, Symbol, Variable, Number, String, Array
+struct Line { Tokens, LineNumber, Statement, Defined, Struct }
+
+var StatementTypes = ["if", "elif", "else", "while", "for"];
+struct Statement { Input, Lines, Type }
+def EvaluateStatement {
+
+}
+struct Variable { Name, Value, Keep }
+struct Struct { Name, Properties }
+struct Define { Name, Lines, Parameters }
+struct Function { Name, Params, Returns }

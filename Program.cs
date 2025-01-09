@@ -34,7 +34,7 @@ namespace NormaLang
             //System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
             var code = contents;
-            Interprete.RunCode("var amount = 5\r\nvar amoney = 0.125\r\n\r\nif $amoney$ > $amount$  {\r\n    var enemy = getEnemy \"first\", $this$\r\n    rotateTo $enemy$, $this$\r\n    shoot 100, $this$\r\n}", filePath);
+            Interprete.RunCode(contents, filePath);
 
             // To time how fast Norm is
             //Console.WriteLine("------------------\nMiliseconds: " + sw.ElapsedMilliseconds.ToString());
