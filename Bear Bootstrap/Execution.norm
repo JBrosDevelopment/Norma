@@ -37,7 +37,7 @@ def Execute: lines {
                         }
                     }
                     if $is_def$ != none {
-                        executeDefinedFunction $de$, $line.Tokens$
+                        executeDefinedFunction $is_def$, $line.Tokens$
                     }
                     if $is_def$ = none {
                         var _var = none
@@ -384,7 +384,7 @@ def executeDefinedFunction: de, tokens {
                 paramsCount + 1
             }
         }
-        if parameterTokens[$paramsCount$] = none {
+        if $parameterTokens[paramsCount]$ = none {
             parameterTokens[$paramsCount$] = [$tokens[i]$]
         }
         else {
@@ -393,7 +393,7 @@ def executeDefinedFunction: de, tokens {
     }
     var obj_parameters = []
     for p in $parameterTokens$ {
-        var value_from_token = getValueFromTokens $p$
+        var value_from_token = getValueFromTokens $p$, false
         if $value_from_token$ = none {
             print "Could not extract value from function parameter in function '$de.Name$'"
         }
@@ -402,7 +402,7 @@ def executeDefinedFunction: de, tokens {
     var parameters = []
     for i in length $obj_parameters$ {
         var Var = Variable: $de.Parameters[i].Name$, $obj_parameters[i]$, false
-        parameters = append $Var$
+        parameters = append $parameters$, $Var$
     }
     var keepVariables = []
     for v in $Variables$ {
@@ -485,8 +485,8 @@ def getValueFromTokens: tokens, getVariableFromIdentifier {
                 }
                 equation + $val$
             }
+            value = solveEquation $equation$
         }
-        value = solveEquation $equation$
     }
     if $tokens[0].Type$ = "String" {
         value = $tokens[0].Value$
@@ -547,11 +547,11 @@ def getValueFromTokens: tokens, getVariableFromIdentifier {
                                 if $variable$ = none {
                                     print "Variable '$name$' does not exist"
                                 }
-                                ret = $variable.Name$
+                                ret = $variable.Value$
 
-                                var first = false
+                                var firstt = false
                                 for j in $partsLen$ {
-                                    if $first$ = true {
+                                    if $firstt$ = true {
                                         var skip = 0
                                         var jPlusOne = ($j$ + 1)
                                         var jPlusTwo = ($j$ + 2)
@@ -589,30 +589,119 @@ def getValueFromTokens: tokens, getVariableFromIdentifier {
                                             print "Expected syntax 'varName[INDEX]' or 'varName.PROPERTY'"
                                         }
                                     }
-                                    first = true
+                                    firstt = true
                                 }
                             }
-                            // functionality -> turning struct and arrays into string [ ] { }
-                            // can't add because can't check the type 'ret' is
-                            // if (ret is object[] arr)
-                            // {
-                            //     ret = ArrayToText(arr);
-                            // }
-                            // if (ret is ExpandoObject e)
-                            // {
-                            //     ret = StructToText(e);
-                            // }
 
-                            val = $ret$ // to string
                         }
-                        text = append $text$, $val$
+                        // functionality -> turning struct and arrays into string [ ] { }
+                        // can not add because Norma can't check the type 'ret' is
+                        // if (ret is object[] arr)
+                        // {
+                        //     ret = ArrayToText(arr);
+                        // }
+                        // if (ret is ExpandoObject e)
+                        // {
+                        //     ret = StructToText(e);
+                        // }
+                        val = $ret$ // to string
                     }
-                    text + $val$
+                    text = append $text$, $val$
                 }
                 value = $text$
             }
         }
     }
+    if $tokens[0].Type$ = "Variable" {
+        var _parts = __regexSplitTokens $tokens[0].Value$
+        var parts = []
+        var val = $tokens[0].Value$
+        for p in $_parts$ {
+            if $p$ != "" {
+                if $p$ != " " {
+                    parts = append $parts$, $p$
+                }
+            }
+        }
+        var is_complex_var = true
+        for v in $Variables$ {
+            if $v.Name$ = $val$ {
+                val = $v.Value$
+            }
+        }
+        var partsLen = length $parts$
+        if $partsLen$ <= 0 {
+            is_complex_var = false
+        }
+        if $is_complex_var$ = true {
+            if $partsLen$ > 1 {
+                if $parts[1]$ != "[" {
+                    if $parts[1]$ != "." {
+                        is_complex_var = false
+                        print "Expected syntax 'varName[INDEX]' or 'varName.PROPERTY'"
+                    }
+                }
+            }
+            if $is_complex_var$ = true {
+                var name = $parts[0]$
+                var variable = none
+                for v in $Variables$ {
+                    if $v.Name$ = $name$ {
+                        variable = $v$
+                    }
+                }
+                if $variable$ = none {
+                    print "Variable '$name$' does not exist"
+                }
+                val = $variable.Value$
+
+                var firstt = false
+                for j in $partsLen$ {
+                    if $firstt$ = true {
+                        var skip = 0
+                        var jPlusOne = ($j$ + 1)
+                        var jPlusTwo = ($j$ + 2)
+                        var is_larger = false
+                        if $partsLen$ >= $jPlusTwo$ {
+                            is_larger = true
+                            if $parts[j]$ = "[" {
+                                skip = 2
+                                var lexer = Tokenize $parts[jPlusOne]$
+                                var lexerTokens = $lexer[0].Tokens$
+                                var index = getValueFromTokens $lexerTokens$, true
+                                if $jPlusTwo$ != "]" { print "Expected syntax 'varName[INDEX]'" }
+                                val = $val[index]$
+                            }
+                            if $parts[j]$ = "." {
+                                skip = 1
+                                var lexer = Tokenize $parts[jPlusOne]$
+                                var lexerTokens = $lexer[0].Tokens$
+                                var propName = $lexer_lines[0].Value$
+                                val = getDictionaryValueFromKey $val$, $propName$
+                            }
+                            if $skip$ = 0 {
+                                print "Expected syntax 'varName[INDEX]' or 'varName.PROPERTY'"
+                            }
+                            j + $skip$
+                            
+                            // functionality -> point: VarName
+                            // can't add because can't check the type variable's value
+                            // if (val is Variable v)
+                            // {
+                            //     val = v.Value;
+                            // }
+                        }
+                        if $is_larger$ = false {
+                            print "Expected syntax 'varName[INDEX]' or 'varName.PROPERTY'"
+                        }
+                    }
+                    firstt = true
+                }
+            }
+        }
+        value = $val$
+    }
+    // add support for $tokens[0].Type$ = "Identifier"
     if $tokens[0].Type$ = "Number" {
         if $tokensLen$ > 1 {
             if $tokens[1].Type$ = "Symbol" { print "Any equations need to be done inside parenthesis" }

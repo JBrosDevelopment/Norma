@@ -1,3 +1,6 @@
-var x = 10
+def add: l, r {
+    var c = ($l$ + $r$)
+    print $c$
+}
 
-print "x: $x$"
+add 1, 2

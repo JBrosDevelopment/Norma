@@ -1,31 +1,97 @@
 [
   {
     "__struct_name": "Line",
-    "Tokens": [
-      {
-        "__struct_name": "Token",
-        "Value": "var",
-        "Type": "Reserved"
-      },
-      {
-        "__struct_name": "Token",
-        "Value": "x",
-        "Type": "Identifier"
-      },
-      {
-        "__struct_name": "Token",
-        "Value": "=",
-        "Type": "Symbol"
-      },
-      {
-        "__struct_name": "Token",
-        "Value": "10",
-        "Type": "Number"
-      }
-    ],
+    "Tokens": [],
     "LineNumber": 1.0,
     "Statement": "",
-    "Defined": "",
+    "Defined": {
+      "__struct_name": "Define",
+      "Name": "add",
+      "Lines": [
+        {
+          "__struct_name": "Line",
+          "Tokens": [
+            {
+              "__struct_name": "Token",
+              "Value": "var",
+              "Type": "Reserved"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": "c",
+              "Type": "Identifier"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": "=",
+              "Type": "Symbol"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": "(",
+              "Type": "Symbol"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": "l",
+              "Type": "Variable"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": "+",
+              "Type": "Symbol"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": "r",
+              "Type": "Variable"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": ")",
+              "Type": "Symbol"
+            }
+          ],
+          "LineNumber": 2.0,
+          "Statement": "",
+          "Defined": "",
+          "Struct": ""
+        },
+        {
+          "__struct_name": "Line",
+          "Tokens": [
+            {
+              "__struct_name": "Token",
+              "Value": "print",
+              "Type": "Identifier"
+            },
+            {
+              "__struct_name": "Token",
+              "Value": "c",
+              "Type": "Variable"
+            }
+          ],
+          "LineNumber": 3.0,
+          "Statement": "",
+          "Defined": "",
+          "Struct": ""
+        }
+      ],
+      "Parameters": [
+        {
+          "__struct_name": "Variable",
+          "Name": "l",
+          "Value": "",
+          "Keep": false
+        },
+        {
+          "__struct_name": "Variable",
+          "Name": "r",
+          "Value": "",
+          "Keep": false
+        }
+      ]
+    },
     "Struct": ""
   },
   {
@@ -33,21 +99,26 @@
     "Tokens": [
       {
         "__struct_name": "Token",
-        "Value": "print",
+        "Value": "add",
         "Type": "Identifier"
       },
       {
         "__struct_name": "Token",
-        "Value": "x: ",
-        "Type": "String"
+        "Value": "1",
+        "Type": "Number"
       },
       {
         "__struct_name": "Token",
-        "Value": "x",
-        "Type": "Variable"
+        "Value": ",",
+        "Type": "Symbol"
+      },
+      {
+        "__struct_name": "Token",
+        "Value": "2",
+        "Type": "Number"
       }
     ],
-    "LineNumber": 3.0,
+    "LineNumber": 6.0,
     "Statement": "",
     "Defined": "",
     "Struct": ""

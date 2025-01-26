@@ -114,7 +114,7 @@ def returnDefine: tokens, lines, i {
         var parametersAll = join $parametersTokensValue$, ""
         var parameterParts = split $parametersAll$, ","
         for param in $parameterParts$ {
-            var v = Variable: $param$, none
+            var v = Variable: $param$, none, false
             parameters = append $parameters$, $v$
         }
     }

@@ -30,4 +30,5 @@ keep var Defined = []
 keep var Structs = []
 keep var Returning = none
 
+print "Running\n"
 Execute $parser_lines$

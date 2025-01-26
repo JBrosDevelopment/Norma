@@ -257,7 +257,7 @@ namespace NormaLang
     }
     public class FSolveEquation : IFunction
     {
-        public string Name { get; } = "solverEquation";
+        public string Name { get; } = "solveEquation";
         public int Params { get; } = 1;
         public bool Returns { get; } = true;
         public object? Execute(object[] args)
